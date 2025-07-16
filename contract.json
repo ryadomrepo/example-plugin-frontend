@@ -1,0 +1,21 @@
+{
+  "packages": {
+    "color-picker-erp-settings": {
+      "application": "erp",
+      "areas": ["plugin-settings"]
+    },
+    "widget-masters-promo": {
+      "application": "widget",
+      "areas": ["root"]
+    },
+    "client-loyalty-card": {
+      "application": "erp",
+      "areas": ["erp-visit-modal-client-details"]
+    },
+    "timetable-record-client-name": {
+      "application": "erp",
+      "areas": ["erp-timetable-controls", "erp-timetable-record-client-name"]
+    }
+  },
+  "plugin-slug": "color-picker-slug"
+}

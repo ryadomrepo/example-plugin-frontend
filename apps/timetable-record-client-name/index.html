@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Timetable Record Client Name Plugin</title>
+  </head>
+  <body>
+    <div data-plugin-container="erp-timetable-controls"></div>
+    <div data-plugin-container="erp-timetable-record-client-name"></div>
+    <script type="module">
+      import { initializeHost, cleanupHost } from '/src/host.ts';
+      import('/src/index.ts').then(initializeHost).catch(cleanupHost);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1 @@
+export { definePluginConfig } from './plugin';

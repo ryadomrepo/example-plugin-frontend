@@ -1,0 +1,13 @@
+{
+  "name": "@yclients-configs/tsconfig",
+  "private": true,
+  "version": "0.1.0",
+  "description": "YCLIENTS: переиспользуемые файлы конфигурации TSConfigs",
+  "main": "tsconfig.json",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "files": [
+    "*.json"
+  ]
+}

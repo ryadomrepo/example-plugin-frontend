@@ -1,0 +1,30 @@
+{
+  "name": "@yclients-plugins/client-loyalty-card",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "vitest",
+    "clean": "rm -rf node_modules"
+  },
+  "dependencies": {
+    "@yclients-configs/vite": "^0.1.0",
+    "@yclients-plugins/utils": "^0.1.0",
+    "vue": "^3.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@vitejs/plugin-vue": "^4.5.0",
+    "@vue/tsconfig": "^0.5.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0",
+    "vitest": "^3.0.0"
+  }
+}
