@@ -1,6 +1,5 @@
 {
   "name": "@yclients-gitlab/yclients-plugins",
-  "private": true,
   "version": "1.0.0",
   "description": "YCLIENTS plugins workspace",
   "workspaces": [
