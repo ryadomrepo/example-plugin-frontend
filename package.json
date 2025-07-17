@@ -1,5 +1,5 @@
 {
-  "name": "yclients-plugins",
+  "name": "@yclients-gitlab/yclients-plugins",
   "private": true,
   "version": "1.0.0",
   "description": "YCLIENTS plugins workspace",
@@ -30,5 +30,8 @@
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }
