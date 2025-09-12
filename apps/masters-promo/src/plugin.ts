@@ -9,10 +9,8 @@ import type { THostReadyEvent } from './types/events';
 import { LoggerUtil } from './utils/logger';
 import { MastersService } from './services/masters';
 
-// Импортируем contract.json для получения PLUGIN_AREAS
-import contract from '@/contract.json';
-
-const PLUGIN_AREAS = contract.packages['widget-masters-promo'].areas;
+// Определяем области плагина напрямую
+const PLUGIN_AREAS = ['root'] as const;
 
 // Создаем имена событий хоста для всех областей
 const HOST_EVENT_NAMES = Object.fromEntries(
@@ -33,7 +31,8 @@ const hostEventEmitter = new DocumentEventEmitter<THostReadyEvent>();
 function handleHostReadyEvent(event: CustomEvent<THostReadyEvent>): void {
   LoggerUtil.info('Получено событие готовности хоста:', event);
 
-  MastersService.addSlotsForMasterPortfolios();
+  // Используем новый метод с динамическими данными
+  MastersService.addDynamicPortfolioSlots();
 }
 
 /**
