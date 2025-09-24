@@ -2,9 +2,12 @@ import {
   createHostEventNames,
   createPluginEventNames,
 } from '@yclients-plugins/utils';
+import contract from '../../../contract.json';
+import type { ContractConfig } from './types/contract';
 
 const CONTAINER_ID = 'widget-masters-promo';
-const PLUGIN_AREAS = ['root'] as const;
+// Получаем области плагина из contract.json
+const PLUGIN_AREAS = (contract as ContractConfig).packages['widget-masters-promo'].areas;
 
 /**
  * Инициализация хоста плагина

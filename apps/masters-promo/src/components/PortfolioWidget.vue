@@ -22,24 +22,40 @@
     <div v-else-if="allItems.length > 0" class="portfolio-content">
       <div class="portfolio-header">
         <h3 class="portfolio-title">Портфолио</h3>
-        <div class="collections-count">{{ allItems.length }} работ</div>
+        <div class="portfolio-navigation">
+          <button 
+            class="nav-btn nav-prev" 
+            @click.prevent="scrollLeft"
+            :disabled="!canScrollLeft"
+            type="button"
+          >
+            ←
+          </button>
+          <button 
+            class="nav-btn nav-next" 
+            @click.prevent="scrollRight"
+            :disabled="!canScrollRight"
+            type="button"
+          >
+            →
+          </button>
+        </div>
       </div>
       
-      <!-- Сетка изображений -->
-      <div class="portfolio-grid">
-        <div 
-          v-for="(item, index) in allItems" 
-          :key="item.mediaId"
-          class="portfolio-item"
-          @click="openCarousel(index)"
-        >
-          <img 
-            :src="item.media_url" 
-            :alt="`Работа ${index + 1}`"
-            class="portfolio-image"
-          />
-          <div class="portfolio-overlay">
-            <span class="portfolio-index">{{ index + 1 }}</span>
+      <!-- Горизонтальная прокрутка изображений -->
+      <div class="portfolio-scroll-container" ref="scrollContainer">
+        <div class="portfolio-scroll">
+          <div 
+            v-for="(item, index) in allItems" 
+            :key="item.mediaId"
+            class="portfolio-card"
+            @click="openCarousel(index)"
+          >
+            <img 
+              :src="item.media_url" 
+              :alt="`Работа ${index + 1}`"
+              class="portfolio-image"
+            />
           </div>
         </div>
       </div>
@@ -71,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import type { Collection, LoadingState } from '../types/api';
 import { CharmDirectApiService } from '../services/api';
 import { LoggerUtil } from '../utils/logger';
@@ -91,6 +107,9 @@ const loadingState = ref<LoadingState>({
 });
 const showModal = ref(false);
 const selectedCollection = ref<Collection | null>(null);
+const scrollContainer = ref<HTMLElement | null>(null);
+const canScrollLeft = ref(true);
+const canScrollRight = ref(true);
 
 // Вычисляемые свойства
 const totalItemsCount = computed(() => 
@@ -158,6 +177,31 @@ const closeModal = () => {
   selectedCollection.value = null;
 };
 
+// Методы для прокрутки
+const scrollLeft = () => {
+  LoggerUtil.info('Прокрутка влево');
+  if (scrollContainer.value) {
+    scrollContainer.value.scrollBy({ left: -300, behavior: 'smooth' });
+    setTimeout(updateScrollButtons, 100);
+  }
+};
+
+const scrollRight = () => {
+  LoggerUtil.info('Прокрутка вправо');
+  if (scrollContainer.value) {
+    scrollContainer.value.scrollBy({ left: 300, behavior: 'smooth' });
+    setTimeout(updateScrollButtons, 100);
+  }
+};
+
+const updateScrollButtons = () => {
+  if (scrollContainer.value) {
+    const { scrollLeft, scrollWidth, clientWidth } = scrollContainer.value;
+    canScrollLeft.value = scrollLeft > 0;
+    canScrollRight.value = scrollLeft < scrollWidth - clientWidth - 1;
+  }
+};
+
 // Обработка клавиши Escape для закрытия модального окна
 const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Escape' && showModal.value) {
@@ -169,6 +213,21 @@ onMounted(() => {
   LoggerUtil.info(`PortfolioWidget монтирован для staff_id: ${props.staffId}`);
   loadPortfolioData();
   document.addEventListener('keydown', handleKeydown);
+  
+  // Добавляем обработчик прокрутки
+  setTimeout(() => {
+    if (scrollContainer.value) {
+      scrollContainer.value.addEventListener('scroll', updateScrollButtons);
+      updateScrollButtons();
+    }
+  }, 500);
+});
+
+// Следим за изменениями в allItems и обновляем кнопки
+watch(allItems, () => {
+  setTimeout(() => {
+    updateScrollButtons();
+  }, 100);
 });
 </script>
 
@@ -246,26 +305,85 @@ onMounted(() => {
   color: #666;
 }
 
-/* Превью коллекций */
-.portfolio-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 12px;
-  margin-bottom: 20px;
+/* Заголовок портфолио */
+.portfolio-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
 }
 
-.portfolio-item {
-  cursor: pointer;
+.portfolio-navigation {
+  display: flex;
+  gap: 8px;
+}
+
+.nav-btn {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #e0e0e0;
+  background: white;
   border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 18px;
+  color: #333;
+  user-select: none;
+  outline: none;
+}
+
+.nav-btn:hover:not(:disabled) {
+  background: #f5f5f5;
+  border-color: #ccc;
+  transform: translateY(-1px);
+}
+
+.nav-btn:active:not(:disabled) {
+  transform: translateY(0);
+  background: #e9ecef;
+}
+
+.nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  background: #f8f9fa;
+}
+
+/* Горизонтальная прокрутка */
+.portfolio-scroll-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.portfolio-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+.portfolio-scroll {
+  display: flex;
+  gap: 16px;
+  padding-bottom: 4px;
+}
+
+.portfolio-card {
+  flex: 0 0 auto;
+  width: 200px;
+  height: 250px;
+  cursor: pointer;
+  border-radius: 12px;
   overflow: hidden;
   transition: transform 0.2s, box-shadow 0.2s;
-  position: relative;
-  aspect-ratio: 1;
+  background: #f8f9fa;
 }
 
-.portfolio-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.portfolio-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
 .portfolio-image {
@@ -274,34 +392,22 @@ onMounted(() => {
   object-fit: cover;
 }
 
-.portfolio-overlay {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.portfolio-index {
-  line-height: 1;
-}
-
 /* Адаптивность для мобильных устройств */
 @media (max-width: 768px) {
-  .portfolio-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 8px;
+  .portfolio-card {
+    width: 160px;
+    height: 200px;
   }
   
-  .portfolio-overlay {
-    top: 4px;
-    right: 4px;
-    padding: 2px 6px;
-    font-size: 11px;
+  .portfolio-scroll {
+    gap: 12px;
+  }
+  
+  .nav-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+    border-radius: 6px;
   }
 }
 

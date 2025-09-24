@@ -8,9 +8,11 @@ import type { THostReadyEvent } from './types/events';
 
 import { LoggerUtil } from './utils/logger';
 import { MastersService } from './services/masters';
+import contract from '../../../contract.json';
+import type { ContractConfig } from './types/contract';
 
-// Определяем области плагина напрямую
-const PLUGIN_AREAS = ['root'] as const;
+// Получаем области плагина из contract.json
+const PLUGIN_AREAS = (contract as ContractConfig).packages['widget-masters-promo'].areas;
 
 // Создаем имена событий хоста для всех областей
 const HOST_EVENT_NAMES = Object.fromEntries(
