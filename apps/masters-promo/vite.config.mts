@@ -15,13 +15,5 @@ export default defineConfig({
       name: 'WidgetMastersPromo',
       fileName: (format) => `widget-masters-promo.${format}.js`,
     },
-    rollupOptions: {
-      external: ['vue'],
-      output: {
-        globals: {
-          vue: 'Vue',
-        },
-      },
-    },
   },
 });

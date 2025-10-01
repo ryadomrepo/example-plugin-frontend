@@ -4,12 +4,16 @@
       <!-- Основное изображение -->
       <div class="main-image-container">
         <img 
-          :src="items[currentIndex]?.media_url" 
+          v-if="items[currentIndex]?.media_url"
+          :src="items[currentIndex].media_url" 
           :alt="`Портфолио ${currentIndex + 1}`"
           class="main-image"
           @load="onImageLoad"
           @error="onImageError"
         />
+        <div v-else class="image-placeholder">
+          Загрузка изображения...
+        </div>
         
         <!-- Навигационные кнопки на основном изображении -->
         <button 
@@ -136,11 +140,11 @@ const goToSlide = (index: number) => {
 };
 
 const onImageLoad = () => {
-  // Можно добавить логику для обработки успешной загрузки изображения
+  // Изображение загружено успешно
 };
 
 const onImageError = (event: Event) => {
-  console.warn('Ошибка загрузки изображения:', (event.target as HTMLImageElement).src);
+  console.error('Ошибка загрузки изображения:', (event.target as HTMLImageElement).src);
 };
 
 const startAutoplay = () => {
@@ -211,8 +215,8 @@ onUnmounted(() => {
 .carousel-layout {
   display: flex;
   width: 100%;
-  height: 100%;
-  min-height: 500px;
+  height: 600px;
+  min-height: 600px;
 }
 
 /* Основное изображение */
@@ -227,11 +231,19 @@ onUnmounted(() => {
 }
 
 .main-image {
-  max-width: 100%;
-  max-height: 100%;
+  max-width: calc(100% - 40px);
+  max-height: 560px;
+  width: auto;
+  height: auto;
   object-fit: contain;
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.image-placeholder {
+  color: white;
+  font-size: 18px;
+  padding: 40px;
 }
 
 /* Навигационные стрелки на основном изображении */
@@ -272,16 +284,18 @@ onUnmounted(() => {
 /* Контейнер миниатюр */
 .thumbnails-container {
   width: 200px;
+  height: 600px;
   background: rgba(0, 0, 0, 0.8);
   border-left: 1px solid rgba(255, 255, 255, 0.1);
   padding: 20px 10px;
+  overflow: hidden;
 }
 
 .thumbnails-scroll {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 100%;
+  max-height: 560px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
