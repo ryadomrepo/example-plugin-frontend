@@ -2,7 +2,7 @@
   "packages": {
     "widget-masters-promo": {
       "application": "widget",
-      "areas": ["root"]
+      "areas": ["master-page"]
     }
   },
   "plugin-slug": "widget-masters-promo-slug"
