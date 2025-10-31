@@ -11,7 +11,7 @@ export default defineConfig({
       closeBundle() {
         copyFileSync(
           resolve(__dirname, '../../contract.json'),
-          resolve(__dirname, 'dist/contract.json')
+          resolve(__dirname, '../../dist/widget-masters-promo/contract.json')
         );
       },
     },
@@ -25,6 +25,7 @@ export default defineConfig({
     'process.env.NODE_ENV': JSON.stringify('production'),
   },
   build: {
+    outDir: resolve(__dirname, '../../dist/widget-masters-promo'),
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'WidgetMastersPromo',
