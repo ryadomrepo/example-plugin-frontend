@@ -1,17 +1,19 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
+import { manifestPlugin } from '@yclients-configs/vite';
 import { resolve } from 'path';
 import { copyFileSync } from 'fs';
 
 export default defineConfig({
   plugins: [
     vue(),
+    manifestPlugin(),
     {
       name: 'copy-contract',
       closeBundle() {
         copyFileSync(
           resolve(__dirname, '../../contract.json'),
-          resolve(__dirname, '../../dist/widget-masters-promo/contract.json')
+          resolve(__dirname, '../../dist/contract.json')
         );
       },
     },

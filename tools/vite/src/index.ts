@@ -6,3 +6,6 @@ export { defineVueConfig } from './configs/vue';
 
 // // Основные утилиты для создания и настройки конфигурации Vite
 export { createConfig } from './config-builder';
+
+// Плагины
+export { manifestPlugin } from './plugins';
