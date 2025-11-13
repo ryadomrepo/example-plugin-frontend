@@ -22,42 +22,45 @@
     <div v-else-if="allItems.length > 0" class="portfolio-content">
       <div class="portfolio-header">
         <h3 class="portfolio-title">Портфолио</h3>
-        <div class="portfolio-navigation">
-          <button 
-            class="nav-btn nav-prev" 
-            @click.prevent="scrollLeft"
-            :disabled="!canScrollLeft"
-            type="button"
-          >
-            ←
-          </button>
-          <button 
-            class="nav-btn nav-next" 
-            @click.prevent="scrollRight"
-            :disabled="!canScrollRight"
-            type="button"
-          >
-            →
-          </button>
-        </div>
       </div>
       
-      <!-- Горизонтальная прокрутка изображений -->
-      <div class="portfolio-scroll-container" ref="scrollContainer">
-        <div class="portfolio-scroll">
+      <!-- Сетка карточек с навигацией -->
+      <div class="portfolio-grid-wrapper">
+        <!-- Кнопка влево -->
+        <button 
+          v-if="currentPage > 0"
+          class="nav-arrow nav-arrow-left" 
+          @click.prevent="prevPage"
+          type="button"
+        >
+          ←
+        </button>
+        
+        <!-- Сетка карточек -->
+        <div class="portfolio-grid">
           <div 
-            v-for="(item, index) in allItems" 
+            v-for="(item, index) in visibleItems" 
             :key="item.mediaId"
             class="portfolio-card"
-            @click="openCarousel(index)"
+            @click="openCarousel(currentPage * 4 + index)"
           >
             <img 
               :src="item.media_url" 
-              :alt="`Работа ${index + 1}`"
+              :alt="`Работа ${currentPage * 4 + index + 1}`"
               class="portfolio-image"
             />
           </div>
         </div>
+        
+        <!-- Кнопка вправо -->
+        <button 
+          v-if="currentPage < totalPages - 1"
+          class="nav-arrow nav-arrow-right" 
+          @click.prevent="nextPage"
+          type="button"
+        >
+          →
+        </button>
       </div>
     </div>
     
@@ -69,19 +72,14 @@
     
     <!-- Модальное окно с каруселью -->
     <div v-if="showModal" class="modal-overlay" @click="closeModal">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>{{ selectedCollection?.name || 'Портфолио' }}</h3>
-          <button @click="closeModal" class="close-btn">×</button>
-        </div>
-        <div class="modal-body">
-          <PortfolioCarousel 
-            v-if="carouselItems.length > 0"
-            :items="carouselItems"
-            :autoplay="false"
-          />
-        </div>
-      </div>
+      <button @click="closeModal" class="modal-close-btn">×</button>
+      <PortfolioCarousel 
+        v-if="carouselItems.length > 0"
+        :items="carouselItems"
+        :initial-index="initialCarouselIndex"
+        :autoplay="false"
+        @click.stop
+      />
     </div>
   </div>
 </template>
@@ -107,18 +105,22 @@ const loadingState = ref<LoadingState>({
 });
 const showModal = ref(false);
 const selectedCollection = ref<Collection | null>(null);
-const scrollContainer = ref<HTMLElement | null>(null);
-const canScrollLeft = ref(true);
-const canScrollRight = ref(true);
+const currentPage = ref(0);
+const initialCarouselIndex = ref(0);
 
 // Вычисляемые свойства
-const totalItemsCount = computed(() => 
-  collections.value.reduce((sum, col) => sum + col.items.length, 0)
-);
-
 const allItems = computed(() => {
   // Объединяем все элементы из всех коллекций в один массив
   return collections.value.flatMap(col => col.items);
+});
+
+const totalPages = computed(() => {
+  return Math.ceil(allItems.value.length / 4);
+});
+
+const visibleItems = computed(() => {
+  const start = currentPage.value * 4;
+  return allItems.value.slice(start, start + 4);
 });
 
 const carouselItems = computed(() => {
@@ -160,16 +162,9 @@ const retryLoad = () => {
 
 const openCarousel = (startIndex: number = 0) => {
   selectedCollection.value = null;
+  initialCarouselIndex.value = startIndex;
   showModal.value = true;
   LoggerUtil.info(`Открыта карусель с изображения ${startIndex + 1}`);
-  
-  // Устанавливаем начальный индекс для карусели
-  setTimeout(() => {
-    const carousel = document.querySelector('.portfolio-carousel');
-    if (carousel) {
-      // Можно добавить логику для установки начального индекса
-    }
-  }, 100);
 };
 
 const closeModal = () => {
@@ -177,28 +172,18 @@ const closeModal = () => {
   selectedCollection.value = null;
 };
 
-// Методы для прокрутки
-const scrollLeft = () => {
-  LoggerUtil.info('Прокрутка влево');
-  if (scrollContainer.value) {
-    scrollContainer.value.scrollBy({ left: -300, behavior: 'smooth' });
-    setTimeout(updateScrollButtons, 100);
+// Методы для навигации по страницам
+const prevPage = () => {
+  if (currentPage.value > 0) {
+    currentPage.value--;
+    LoggerUtil.info(`Переключение на страницу ${currentPage.value + 1}`);
   }
 };
 
-const scrollRight = () => {
-  LoggerUtil.info('Прокрутка вправо');
-  if (scrollContainer.value) {
-    scrollContainer.value.scrollBy({ left: 300, behavior: 'smooth' });
-    setTimeout(updateScrollButtons, 100);
-  }
-};
-
-const updateScrollButtons = () => {
-  if (scrollContainer.value) {
-    const { scrollLeft, scrollWidth, clientWidth } = scrollContainer.value;
-    canScrollLeft.value = scrollLeft > 0;
-    canScrollRight.value = scrollLeft < scrollWidth - clientWidth - 1;
+const nextPage = () => {
+  if (currentPage.value < totalPages.value - 1) {
+    currentPage.value++;
+    LoggerUtil.info(`Переключение на страницу ${currentPage.value + 1}`);
   }
 };
 
@@ -213,30 +198,15 @@ onMounted(() => {
   LoggerUtil.info(`PortfolioWidget монтирован для staff_id: ${props.staffId}`);
   loadPortfolioData();
   document.addEventListener('keydown', handleKeydown);
-  
-  // Добавляем обработчик прокрутки
-  setTimeout(() => {
-    if (scrollContainer.value) {
-      scrollContainer.value.addEventListener('scroll', updateScrollButtons);
-      updateScrollButtons();
-    }
-  }, 500);
-});
-
-// Следим за изменениями в allItems и обновляем кнопки
-watch(allItems, () => {
-  setTimeout(() => {
-    updateScrollButtons();
-  }, 100);
 });
 </script>
 
 <style scoped>
 .portfolio-widget {
   padding: 16px;
-  background: white;
+  background: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
@@ -305,85 +275,79 @@ watch(allItems, () => {
   color: #666;
 }
 
+/* Основной контент */
+.portfolio-content {
+  position: relative;
+}
+
 /* Заголовок портфолио */
 .portfolio-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
-.portfolio-navigation {
-  display: flex;
-  gap: 8px;
+/* Обертка для сетки с кнопками */
+.portfolio-grid-wrapper {
+  position: relative;
+  width: 100%;
 }
 
-.nav-btn {
+/* Сетка карточек */
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+/* Кнопки навигации поверх карточек */
+.nav-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
   width: 40px;
   height: 40px;
-  border: 1px solid #e0e0e0;
-  background: white;
   border-radius: 8px;
+  background: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  font-size: 18px;
+  color: #333;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  z-index: 10;
   transition: all 0.2s;
-  font-size: 18px;
-  color: #333;
-  user-select: none;
-  outline: none;
 }
 
-.nav-btn:hover:not(:disabled) {
-  background: #f5f5f5;
-  border-color: #ccc;
-  transform: translateY(-1px);
-}
-
-.nav-btn:active:not(:disabled) {
-  transform: translateY(0);
-  background: #e9ecef;
-}
-
-.nav-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
+.nav-arrow:hover {
   background: #f8f9fa;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  transform: translateY(-50%) scale(1.05);
 }
 
-/* Горизонтальная прокрутка */
-.portfolio-scroll-container {
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+.nav-arrow-left {
+  left: 20px;
 }
 
-.portfolio-scroll-container::-webkit-scrollbar {
-  display: none;
+.nav-arrow-right {
+  right: 20px;
 }
 
-.portfolio-scroll {
-  display: flex;
-  gap: 16px;
-  padding-bottom: 4px;
-}
-
+/* Карточка портфолио */
 .portfolio-card {
-  flex: 0 0 auto;
-  width: 200px;
-  height: 250px;
+  width: 100%;
+  aspect-ratio: 3/4;
   cursor: pointer;
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
   transition: transform 0.2s, box-shadow 0.2s;
   background: #f8f9fa;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .portfolio-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
 }
 
 .portfolio-image {
@@ -394,20 +358,37 @@ watch(allItems, () => {
 
 /* Адаптивность для мобильных устройств */
 @media (max-width: 768px) {
-  .portfolio-card {
-    width: 160px;
-    height: 200px;
+  .portfolio-widget {
+    padding: 12px;
   }
   
-  .portfolio-scroll {
-    gap: 12px;
+  .portfolio-grid {
+    gap: 8px;
   }
   
-  .nav-btn {
-    width: 36px;
-    height: 36px;
+  .portfolio-header {
+    margin-bottom: 12px;
+  }
+  
+  .portfolio-title {
     font-size: 16px;
+  }
+  
+  .nav-arrow {
+    width: 22px;
+    height: 22px;
+    font-size: 10px;
     border-radius: 6px;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .nav-arrow-left {
+    left: 6px;
+  }
+  
+  .nav-arrow-right {
+    right: 6px;
   }
 }
 
@@ -436,56 +417,35 @@ watch(allItems, () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(60, 60, 60, 0.95);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 20px;
+  padding: 0;
 }
 
-.modal-content {
-  background: white;
-  border-radius: 12px;
-  max-width: 90vw;
-  max-height: 90vh;
-  overflow: hidden;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid #eee;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 18px;
-  color: #333;
-}
-
-.close-btn {
+.modal-close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: 32px;
   cursor: pointer;
-  color: #666;
+  color: white;
   padding: 0;
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 1001;
+  transition: opacity 0.2s;
 }
 
-.close-btn:hover {
-  color: #333;
-}
-
-.modal-body {
-  padding: 20px;
+.modal-close-btn:hover {
+  opacity: 0.7;
 }
 
 /* Адаптивность */
