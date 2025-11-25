@@ -16,8 +16,16 @@
         <p><strong>Примечание:</strong> В реальной системе YCLIENTS виджеты будут отображаться на страницах мастеров.</p>
       </div>
 
+      <div class="demo-section mini-widget-demo">
+        <PortfolioMiniWidget 
+          v-if="currentStaffId" 
+          :key="`mini-${currentStaffId}`"
+          :staff-id="currentStaffId" 
+        />
+      </div>
+
       <div class="demo-section">
-        <h3>Демо виджета:</h3>
+        <h3>Демо полного виджета (страница мастера):</h3>
         <div class="demo-controls">
           <label for="staff-id-input">Staff ID:</label>
           <input 
@@ -46,6 +54,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import PortfolioWidget from './components/PortfolioWidget.vue';
+import PortfolioMiniWidget from './components/PortfolioMiniWidget.vue';
 
 const staffId = ref<string>('');
 const currentStaffId = ref<string>('');
@@ -61,7 +70,7 @@ const setStaffId = (id: string) => {
   loadPortfolio();
 };
 
-// Инициализация демо-режима
+// Инициализация - автоматически загружаем тестовый staff_id
 onMounted(() => {
   const urlParams = new URLSearchParams(window.location.search);
   const paramStaffId = urlParams.get('staff_id');
@@ -69,8 +78,10 @@ onMounted(() => {
   if (paramStaffId) {
     staffId.value = paramStaffId;
     currentStaffId.value = paramStaffId;
+  } else {
+    // Автоматически загружаем тестовый ID 811339
+    setStaffId('811339');
   }
-  // Не устанавливаем автоматически в демо-режиме
 });
 </script>
 
@@ -242,5 +253,109 @@ onMounted(() => {
 
 .debug-info p {
   margin: 5px 0;
+}
+
+.plugin-status {
+  margin-bottom: 40px;
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.status-info {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+}
+
+.demo-section {
+  margin-bottom: 40px;
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.mini-widget-demo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.demo-section h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+.demo-description {
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.mini-widget-container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.staff-card-mock {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.staff-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.staff-avatar {
+  width: 60px;
+  height: 60px;
+  background: #667eea;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+}
+
+.staff-info h4 {
+  margin: 0 0 5px 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.staff-info p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.expand-btn {
+  width: 100%;
+  padding: 10px;
+  margin-top: 15px;
+  background: transparent;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.expand-btn:hover {
+  background: #f0f0f0;
+  border-color: #ccc;
 }
 </style>

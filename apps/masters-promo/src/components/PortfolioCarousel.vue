@@ -10,6 +10,8 @@
           class="main-image"
           @load="onImageLoad"
           @error="onImageError"
+          @contextmenu.prevent
+          draggable="false"
         />
         <div v-else class="image-placeholder">
           Загрузка изображения...
@@ -21,14 +23,18 @@
           class="nav-arrow nav-arrow--left" 
           @click="prevSlide"
         >
-          ←
+          <svg width="11" height="8" viewBox="0 0 11 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M4.18693 7.52021C3.99167 7.71547 3.67508 7.71547 3.47982 7.52021L0.146488 4.18688C-0.0487738 3.99161 -0.0487738 3.67503 0.146489 3.47977L3.47982 0.146437C3.67508 -0.0488257 3.99167 -0.0488257 4.18693 0.146437C4.38219 0.341698 4.38219 0.658281 4.18693 0.853543L1.70715 3.33332L9.83337 3.33332C10.1095 3.33332 10.3334 3.55718 10.3334 3.83332C10.3334 4.10947 10.1095 4.33332 9.83337 4.33332L1.70715 4.33332L4.18693 6.8131C4.38219 7.00836 4.38219 7.32495 4.18693 7.52021Z" fill="#262626"/>
+          </svg>
         </button>
         <button 
           v-if="items.length > 1 && currentIndex < items.length - 1"
           class="nav-arrow nav-arrow--right" 
           @click="nextSlide"
         >
-          →
+          <svg width="11" height="8" viewBox="0 0 11 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M6.14645 0.146447C6.34171 -0.0488155 6.65829 -0.0488155 6.85355 0.146447L10.1869 3.47978C10.3821 3.67504 10.3821 3.99162 10.1869 4.18689L6.85355 7.52022C6.65829 7.71548 6.34171 7.71548 6.14645 7.52022C5.95118 7.32496 5.95118 7.00837 6.14645 6.81311L8.62623 4.33333H0.5C0.223858 4.33333 0 4.10948 0 3.83333C0 3.55719 0.223858 3.33333 0.5 3.33333H8.62623L6.14645 0.853553C5.95118 0.658291 5.95118 0.341709 6.14645 0.146447Z" fill="#262626"/>
+          </svg>
         </button>
       </div>
       
@@ -47,6 +53,8 @@
               :src="item.media_url" 
               :alt="`Миниатюра ${index + 1}`"
               class="thumbnail-image"
+              @contextmenu.prevent
+              draggable="false"
             />
           </div>
         </div>
@@ -73,7 +81,7 @@ const props = withDefaults(defineProps<Props>(), {
 const currentIndex = ref(0);
 const carouselContainer = ref<HTMLElement>();
 const thumbnailsContainer = ref<HTMLElement | null>(null);
-const thumbnailRefs = ref<HTMLElement[]>([]);
+const thumbnailRefs = ref<any[]>([]);
 let autoplayTimer: number | null = null;
 
 const nextSlide = () => {
@@ -203,13 +211,15 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 .portfolio-carousel {
   position: relative;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.95);
-  border-radius: 12px;
+  background: #ffffff;
   overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .carousel-layout {
@@ -226,22 +236,22 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  background: #000;
+  background: #f5f5f5;
+  padding: 5px;
 }
 
 .main-image {
-  max-width: calc(100% - 40px);
-  max-height: 560px;
-  width: auto;
-  height: auto;
-  object-fit: contain;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+  user-select: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
 }
 
 .image-placeholder {
-  color: white;
+  color: #666;
   font-size: 18px;
   padding: 40px;
 }
@@ -252,19 +262,26 @@ onUnmounted(() => {
   top: 50%;
   transform: translateY(-50%);
   background: rgba(255, 255, 255, 0.9);
-  color: #333;
   border: none;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  font-size: 20px;
-  font-weight: bold;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
   z-index: 10;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
+}
+
+.nav-arrow svg {
+  width: 14px;
+  height: auto;
+}
+
+.nav-arrow svg path {
+  transition: fill 0.2s ease;
 }
 
 .nav-arrow:hover {
@@ -283,22 +300,26 @@ onUnmounted(() => {
 
 /* Контейнер миниатюр */
 .thumbnails-container {
-  width: 200px;
+  width: 140px;
+  min-width: 140px;
   height: 600px;
-  background: rgba(0, 0, 0, 0.8);
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 20px 10px;
+  background: #ffffff;
+  border-left: 1px solid #e0e0e0;
+  padding: 5px 5px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .thumbnails-scroll {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  max-height: 560px;
+  gap: 4px;
   overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  scrollbar-color: #d0d0d0 transparent;
+  padding-right: 4px;
 }
 
 .thumbnails-scroll::-webkit-scrollbar {
@@ -310,36 +331,41 @@ onUnmounted(() => {
 }
 
 .thumbnails-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
+  background: #d0d0d0;
   border-radius: 2px;
 }
 
 /* Миниатюры */
 .thumbnail {
-  width: 100%;
-  aspect-ratio: 1;
+  flex: 0 0 auto;
+  aspect-ratio: 3/4;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 6px;
   overflow: hidden;
   transition: all 0.2s ease;
-  border: 2px solid transparent;
+  border: 2px solid #ffffff;
   position: relative;
+  background: #f5f5f5;
 }
 
 .thumbnail:hover {
-  transform: scale(1.05);
-  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.02);
+  border-color: #e0e0e0;
 }
 
 .thumbnail--active {
-  border-color: white;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  border-color: #FFB800 !important;
+  border-width: 3px;
 }
 
 .thumbnail-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
 }
 
 /* Адаптивность */
@@ -354,18 +380,24 @@ onUnmounted(() => {
     min-height: 300px;
   }
   
+  .main-image {
+    border-radius: 4px 4px 4px 4px;
+  }
+  
   .thumbnails-container {
     width: 100%;
     height: 100px;
     border-left: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 10px;
+    border-top: 1px solid #e0e0e0;
+    padding: 10px 0;
   }
   
   .thumbnails-scroll {
     flex-direction: row;
     overflow-x: auto;
     overflow-y: hidden;
+    padding: 0 10px;
+    gap: 8px;
   }
   
   .thumbnail {
@@ -374,9 +406,12 @@ onUnmounted(() => {
   }
   
   .nav-arrow {
-    width: 40px;
-    height: 40px;
-    font-size: 16px;
+    width: 32px;
+    height: 32px;
+  }
+  
+  .nav-arrow svg {
+    width: 14px;
   }
   
   .nav-arrow--left {

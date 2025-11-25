@@ -29,7 +29,9 @@
             :disabled="!canScrollLeft"
             type="button"
           >
-            ←
+            <svg width="11" height="8" viewBox="0 0 11 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M4.18693 7.52021C3.99167 7.71547 3.67508 7.71547 3.47982 7.52021L0.146488 4.18688C-0.0487738 3.99161 -0.0487738 3.67503 0.146489 3.47977L3.47982 0.146437C3.67508 -0.0488257 3.99167 -0.0488257 4.18693 0.146437C4.38219 0.341698 4.38219 0.658281 4.18693 0.853543L1.70715 3.33332L9.83337 3.33332C10.1095 3.33332 10.3334 3.55718 10.3334 3.83332C10.3334 4.10947 10.1095 4.33332 9.83337 4.33332L1.70715 4.33332L4.18693 6.8131C4.38219 7.00836 4.38219 7.32495 4.18693 7.52021Z" fill="#262626"/>
+            </svg>
           </button>
           <button 
             class="nav-btn nav-next" 
@@ -37,7 +39,9 @@
             :disabled="!canScrollRight"
             type="button"
           >
-            →
+            <svg width="11" height="8" viewBox="0 0 11 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M6.14645 0.146447C6.34171 -0.0488155 6.65829 -0.0488155 6.85355 0.146447L10.1869 3.47978C10.3821 3.67504 10.3821 3.99162 10.1869 4.18689L6.85355 7.52022C6.65829 7.71548 6.34171 7.71548 6.14645 7.52022C5.95118 7.32496 5.95118 7.00837 6.14645 6.81311L8.62623 4.33333H0.5C0.223858 4.33333 0 4.10948 0 3.83333C0 3.55719 0.223858 3.33333 0.5 3.33333H8.62623L6.14645 0.853553C5.95118 0.658291 5.95118 0.341709 6.14645 0.146447Z" fill="#262626"/>
+            </svg>
           </button>
         </div>
       </div>
@@ -55,6 +59,8 @@
               :src="item.media_url" 
               :alt="`Работа ${index + 1}`"
               class="portfolio-image"
+              @contextmenu.prevent
+              draggable="false"
             />
           </div>
         </div>
@@ -70,24 +76,19 @@
     <!-- Модальное окно с каруселью -->
     <div v-if="showModal" class="modal-overlay" @click="closeModal">
       <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>{{ selectedCollection?.name || 'Портфолио' }}</h3>
-          <button @click="closeModal" class="close-btn">×</button>
-        </div>
-        <div class="modal-body">
-          <PortfolioCarousel 
-            v-if="carouselItems.length > 0"
-            :items="carouselItems"
-            :autoplay="false"
-          />
-        </div>
+        <button @click="closeModal" class="close-btn-float">×</button>
+        <PortfolioCarousel 
+          v-if="carouselItems.length > 0"
+          :items="carouselItems"
+          :autoplay="false"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import type { Collection, LoadingState } from '../types/api';
 import { CharmDirectApiService } from '../services/api';
 import { LoggerUtil } from '../utils/logger';
@@ -110,6 +111,12 @@ const selectedCollection = ref<Collection | null>(null);
 const scrollContainer = ref<HTMLElement | null>(null);
 const canScrollLeft = ref(true);
 const canScrollRight = ref(true);
+
+// Переменные для drag-to-scroll
+const isDragging = ref(false);
+const startX = ref(0);
+const scrollLeftStart = ref(0);
+const wasDragging = ref(false);
 
 // Вычисляемые свойства
 const totalItemsCount = computed(() => 
@@ -159,6 +166,12 @@ const retryLoad = () => {
 };
 
 const openCarousel = (startIndex: number = 0) => {
+  // Предотвращаем открытие, если было перетаскивание
+  if (wasDragging.value) {
+    LoggerUtil.info('Открытие карусели отменено - произошло перетаскивание');
+    return;
+  }
+  
   selectedCollection.value = null;
   showModal.value = true;
   LoggerUtil.info(`Открыта карусель с изображения ${startIndex + 1}`);
@@ -202,6 +215,63 @@ const updateScrollButtons = () => {
   }
 };
 
+// Drag-to-scroll методы
+const handleMouseDown = (e: MouseEvent) => {
+  if (!scrollContainer.value) return;
+  
+  // Разрешаем drag только для ЛКМ (button === 0) или средней кнопки (button === 1)
+  if (e.button !== 0 && e.button !== 1) return;
+  
+  isDragging.value = true;
+  wasDragging.value = false;
+  startX.value = e.pageX - scrollContainer.value.offsetLeft;
+  scrollLeftStart.value = scrollContainer.value.scrollLeft;
+  scrollContainer.value.style.cursor = 'grabbing';
+  scrollContainer.value.style.userSelect = 'none';
+  
+  e.preventDefault();
+};
+
+const handleMouseMove = (e: MouseEvent) => {
+  if (!isDragging.value || !scrollContainer.value) return;
+  
+  e.preventDefault();
+  const x = e.pageX - scrollContainer.value.offsetLeft;
+  const walk = (x - startX.value) * 1.5; // Множитель для скорости прокрутки
+  
+  // Если переместили больше чем на 5px, считаем это перетаскиванием
+  if (Math.abs(walk) > 5) {
+    wasDragging.value = true;
+  }
+  
+  scrollContainer.value.scrollLeft = scrollLeftStart.value - walk;
+};
+
+const handleMouseUp = () => {
+  if (!scrollContainer.value) return;
+  
+  isDragging.value = false;
+  scrollContainer.value.style.cursor = 'grab';
+  scrollContainer.value.style.userSelect = '';
+  
+  // Сбрасываем флаг через небольшую задержку
+  setTimeout(() => {
+    wasDragging.value = false;
+  }, 50);
+};
+
+const handleMouseLeave = () => {
+  if (isDragging.value && scrollContainer.value) {
+    isDragging.value = false;
+    scrollContainer.value.style.cursor = 'grab';
+    scrollContainer.value.style.userSelect = '';
+    
+    setTimeout(() => {
+      wasDragging.value = false;
+    }, 50);
+  }
+};
+
 // Обработка клавиши Escape для закрытия модального окна
 const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Escape' && showModal.value) {
@@ -214,13 +284,30 @@ onMounted(() => {
   loadPortfolioData();
   document.addEventListener('keydown', handleKeydown);
   
-  // Добавляем обработчик прокрутки
+  // Добавляем обработчики прокрутки и drag-to-scroll
   setTimeout(() => {
     if (scrollContainer.value) {
       scrollContainer.value.addEventListener('scroll', updateScrollButtons);
+      scrollContainer.value.addEventListener('mousedown', handleMouseDown);
+      scrollContainer.value.addEventListener('mousemove', handleMouseMove);
+      scrollContainer.value.addEventListener('mouseup', handleMouseUp);
+      scrollContainer.value.addEventListener('mouseleave', handleMouseLeave);
+      scrollContainer.value.style.cursor = 'grab';
       updateScrollButtons();
     }
   }, 500);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeydown);
+  
+  if (scrollContainer.value) {
+    scrollContainer.value.removeEventListener('scroll', updateScrollButtons);
+    scrollContainer.value.removeEventListener('mousedown', handleMouseDown);
+    scrollContainer.value.removeEventListener('mousemove', handleMouseMove);
+    scrollContainer.value.removeEventListener('mouseup', handleMouseUp);
+    scrollContainer.value.removeEventListener('mouseleave', handleMouseLeave);
+  }
 });
 
 // Следим за изменениями в allItems и обновляем кнопки
@@ -232,6 +319,8 @@ watch(allItems, () => {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 .portfolio-widget {
   padding: 16px;
   background: white;
@@ -295,9 +384,10 @@ watch(allItems, () => {
 
 .portfolio-title {
   margin: 0;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   color: #333;
+  font-family: 'Inter', sans-serif;
 }
 
 .collections-count {
@@ -329,10 +419,18 @@ watch(allItems, () => {
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 18px;
-  color: #333;
   user-select: none;
   outline: none;
+  padding: 0;
+}
+
+.nav-btn svg {
+  width: 14px;
+  height: auto;
+}
+
+.nav-btn svg path {
+  transition: fill 0.2s ease;
 }
 
 .nav-btn:hover:not(:disabled) {
@@ -358,6 +456,12 @@ watch(allItems, () => {
   overflow-y: hidden;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  cursor: grab;
+  user-select: none;
+}
+
+.portfolio-scroll-container:active {
+  cursor: grabbing;
 }
 
 .portfolio-scroll-container::-webkit-scrollbar {
@@ -366,7 +470,7 @@ watch(allItems, () => {
 
 .portfolio-scroll {
   display: flex;
-  gap: 16px;
+  gap: 8px;
   padding-bottom: 4px;
 }
 
@@ -375,7 +479,7 @@ watch(allItems, () => {
   width: 200px;
   height: 250px;
   cursor: pointer;
-  border-radius: 12px;
+  border-radius: 4px;
   overflow: hidden;
   transition: transform 0.2s, box-shadow 0.2s;
   background: #f8f9fa;
@@ -390,6 +494,9 @@ watch(allItems, () => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
 }
 
 /* Адаптивность для мобильных устройств */
@@ -400,7 +507,7 @@ watch(allItems, () => {
   }
   
   .portfolio-scroll {
-    gap: 12px;
+    gap: 8px;
   }
   
   .nav-btn {
@@ -446,46 +553,37 @@ watch(allItems, () => {
 
 .modal-content {
   background: white;
-  border-radius: 12px;
   max-width: 90vw;
   max-height: 90vh;
   overflow: hidden;
+  position: relative;
+  border-radius: 4px;
 }
 
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid #eee;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 18px;
-  color: #333;
-}
-
-.close-btn {
-  background: none;
+.close-btn-float {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: white;
   border: none;
-  font-size: 24px;
+  font-size: 18px;
   cursor: pointer;
-  color: #666;
+  color: #333;
   padding: 0;
   width: 30px;
   height: 30px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
 }
 
-.close-btn:hover {
-  color: #333;
-}
-
-.modal-body {
-  padding: 20px;
+.close-btn-float:hover {
+  background: #f5f5f5;
+  transform: scale(1.1);
 }
 
 /* Адаптивность */
@@ -503,8 +601,12 @@ watch(allItems, () => {
     padding: 10px;
   }
   
-  .modal-body {
-    padding: 15px;
+  .close-btn-float {
+    top: 12px;
+    right: 12px;
+    width: 30px;
+    height: 30px;
+    font-size: 18px;
   }
 }
 </style>

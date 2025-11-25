@@ -84,6 +84,15 @@ export function initializePlugin(): () => void {
   // Подписываемся на событие жизненного цикла window
   window.addEventListener('beforeunload', handleBeforeUnload);
 
+  // Fallback: если страница уже загружена (например, при devPluginLoader),
+  // инициализируем слоты автоматически через небольшую задержку
+  setTimeout(() => {
+    if (document.readyState === 'complete') {
+      LoggerUtil.info('Страница уже загружена, запускаем автоматическую инициализацию');
+      MastersService.addDynamicPortfolioSlots();
+    }
+  }, 500);
+
   // Возвращаем функцию отписки
   return cleanupPlugin;
 }
