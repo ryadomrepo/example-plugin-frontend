@@ -1,0 +1,36 @@
+{
+  "name": "@charmdirect/plugins",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Charmdirect plugins workspace",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=packages/utils && npm run build --workspace=apps/masters-promo",
+    "dev": "npm run dev --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "clean": "npm run clean --workspaces --if-present && rm -rf node_modules",
+    "validate-build-artifacts": "node scripts/build-artifacts/validate-build-artifacts.js",
+    "regenerate-lockfile": "bash scripts/lockfile/regenerate-lockfile.sh"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^8.0.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.5.1",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist"
+  ]
+}

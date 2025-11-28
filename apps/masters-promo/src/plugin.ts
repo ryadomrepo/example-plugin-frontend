@@ -1,0 +1,102 @@
+import {
+  createHostEventNames,
+  DocumentEventEmitter,
+  THostEventNames,
+} from '@charmdirect/plugins-utils';
+
+import type { THostReadyEvent } from './types/events';
+
+import { LoggerUtil } from './utils/logger';
+import { MastersService } from './services/masters';
+import contract from '../../../contract.json';
+import type { ContractConfig } from './types/contract';
+
+// Получаем области плагина из contract.json
+const PLUGIN_AREAS = (contract as ContractConfig).packages[
+  'widget-masters-promo'
+].areas;
+
+// Создаем имена событий хоста для всех областей
+const HOST_EVENT_NAMES = Object.fromEntries(
+  PLUGIN_AREAS.map((area) => [area, createHostEventNames(area)]),
+) satisfies Record<string, THostEventNames>;
+
+/**
+ * Эмиттер событий для обработки сообщений от хоста к плагину
+ * Используется для получения уведомлений от хоста о его состоянии и событиях
+ * @type {DocumentEventEmitter<THostReadyEvent>}
+ */
+const hostEventEmitter = new DocumentEventEmitter<THostReadyEvent>();
+
+/**
+ * Обработчик события готовности хоста
+ * @param event - событие готовности хоста
+ */
+function handleHostReadyEvent(event: CustomEvent<THostReadyEvent>): void {
+  LoggerUtil.info('Получено событие готовности хоста:', event);
+
+  // Используем новый метод с динамическими данными
+  MastersService.addDynamicPortfolioSlots();
+}
+
+/**
+ * Обработчик события жизненного цикла window
+ * Используется для очистки ресурсов при выгрузке страницы
+ */
+const handleBeforeUnload = (): void => {
+  LoggerUtil.info('Страница выгружается, выполняем очистку');
+  cleanupPlugin();
+};
+
+/**
+ * Функция отписки от всех событий
+ * Должна вызываться при уничтожении плагина для предотвращения утечек памяти
+ */
+export function cleanupPlugin(): void {
+  LoggerUtil.info('Очистка ресурсов плагина');
+
+  // Отписываемся от событий готовности хоста для всех областей
+  PLUGIN_AREAS.forEach((area) => {
+    const hostEventNames = HOST_EVENT_NAMES[area];
+    if (hostEventNames) {
+      hostEventEmitter.offDocument(hostEventNames.READY, handleHostReadyEvent);
+    }
+  });
+
+  // Отписываемся от события жизненного цикла window
+  window.removeEventListener('beforeunload', handleBeforeUnload);
+}
+
+/**
+ * Инициализация приложения
+ * Создает Vue приложение и настраивает обработку событий
+ * @returns {Function} Функция для отписки от событий
+ */
+export function initializePlugin(): () => void {
+  LoggerUtil.info('Инициализация плагина');
+
+  // Подписываемся на события готовности хоста для всех областей
+  PLUGIN_AREAS.forEach((area) => {
+    const hostEventNames = HOST_EVENT_NAMES[area];
+    if (hostEventNames) {
+      hostEventEmitter.onDocument(hostEventNames.READY, handleHostReadyEvent);
+    }
+  });
+
+  // Подписываемся на событие жизненного цикла window
+  window.addEventListener('beforeunload', handleBeforeUnload);
+
+  // Fallback: если страница уже загружена (например, при devPluginLoader),
+  // инициализируем слоты автоматически через небольшую задержку
+  setTimeout(() => {
+    if (document.readyState === 'complete') {
+      LoggerUtil.info(
+        'Страница уже загружена, запускаем автоматическую инициализацию',
+      );
+      MastersService.addDynamicPortfolioSlots();
+    }
+  }, 500);
+
+  // Возвращаем функцию отписки
+  return cleanupPlugin;
+}

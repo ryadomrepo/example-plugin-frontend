@@ -1,0 +1,9 @@
+{
+  "packages": {
+    "widget-masters-promo": {
+      "application": "widget",
+      "areas": ["master-page"]
+    }
+  },
+  "plugin-slug": "widget-masters-promo-slug"
+}
