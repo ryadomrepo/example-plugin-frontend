@@ -22,48 +22,52 @@
     <div v-else-if="allItems.length > 0" class="portfolio-content">
       <div class="portfolio-header">
         <h3 class="portfolio-title">Портфолио</h3>
-        <div class="portfolio-navigation">
-          <button 
-            class="nav-btn nav-prev" 
-            @click.prevent="scrollLeft"
-            :disabled="!canScrollLeft"
-            type="button"
-          >
-            <svg width="11" height="8" viewBox="0 0 11 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path fill-rule="evenodd" clip-rule="evenodd" d="M4.18693 7.52021C3.99167 7.71547 3.67508 7.71547 3.47982 7.52021L0.146488 4.18688C-0.0487738 3.99161 -0.0487738 3.67503 0.146489 3.47977L3.47982 0.146437C3.67508 -0.0488257 3.99167 -0.0488257 4.18693 0.146437C4.38219 0.341698 4.38219 0.658281 4.18693 0.853543L1.70715 3.33332L9.83337 3.33332C10.1095 3.33332 10.3334 3.55718 10.3334 3.83332C10.3334 4.10947 10.1095 4.33332 9.83337 4.33332L1.70715 4.33332L4.18693 6.8131C4.38219 7.00836 4.38219 7.32495 4.18693 7.52021Z" fill="#262626"/>
-            </svg>
-          </button>
-          <button 
-            class="nav-btn nav-next" 
-            @click.prevent="scrollRight"
-            :disabled="!canScrollRight"
-            type="button"
-          >
-            <svg width="11" height="8" viewBox="0 0 11 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path fill-rule="evenodd" clip-rule="evenodd" d="M6.14645 0.146447C6.34171 -0.0488155 6.65829 -0.0488155 6.85355 0.146447L10.1869 3.47978C10.3821 3.67504 10.3821 3.99162 10.1869 4.18689L6.85355 7.52022C6.65829 7.71548 6.34171 7.71548 6.14645 7.52022C5.95118 7.32496 5.95118 7.00837 6.14645 6.81311L8.62623 4.33333H0.5C0.223858 4.33333 0 4.10948 0 3.83333C0 3.55719 0.223858 3.33333 0.5 3.33333H8.62623L6.14645 0.853553C5.95118 0.658291 5.95118 0.341709 6.14645 0.146447Z" fill="#262626"/>
-            </svg>
-          </button>
-        </div>
       </div>
       
-      <!-- Горизонтальная прокрутка изображений -->
-      <div class="portfolio-scroll-container" ref="scrollContainer">
-        <div class="portfolio-scroll">
-          <div 
-            v-for="(item, index) in allItems" 
-            :key="item.mediaId"
-            class="portfolio-card"
-            @click="openCarousel(index)"
-          >
-            <img 
-              :src="item.media_url" 
-              :alt="`Работа ${index + 1}`"
-              class="portfolio-image"
-              @contextmenu.prevent
-              draggable="false"
-            />
+      <!-- Горизонтальная прокрутка изображений с навигацией -->
+      <div class="portfolio-gallery">
+        <!-- Кнопка влево -->
+        <button 
+          v-if="canScrollLeft"
+          class="nav-btn nav-prev" 
+          @click.prevent="scrollLeft"
+          type="button"
+        >
+          <svg width="8" height="14" viewBox="0 0 8 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M7.70711 0.292893C8.09763 0.683417 8.09763 1.31658 7.70711 1.70711L2.41421 7L7.70711 12.2929C8.09763 12.6834 8.09763 13.3166 7.70711 13.7071C7.31658 14.0976 6.68342 14.0976 6.29289 13.7071L0.292893 7.70711C-0.0976311 7.31658 -0.0976311 6.68342 0.292893 6.29289L6.29289 0.292893C6.68342 -0.0976311 7.31658 -0.0976311 7.70711 0.292893Z" fill="#262626"/>
+          </svg>
+        </button>
+        
+        <div class="portfolio-scroll-container" ref="scrollContainer">
+          <div class="portfolio-scroll">
+            <div 
+              v-for="(item, index) in allItems" 
+              :key="item.mediaId"
+              class="portfolio-card"
+              @click="openCarousel(index)"
+            >
+              <img 
+                :src="item.media_url" 
+                :alt="`Работа ${index + 1}`"
+                class="portfolio-image"
+                @contextmenu.prevent
+                draggable="false"
+              />
+            </div>
           </div>
         </div>
+        
+        <!-- Кнопка вправо -->
+        <button 
+          v-if="canScrollRight"
+          class="nav-btn nav-next" 
+          @click.prevent="scrollRight"
+          type="button"
+        >
+          <svg width="8" height="14" viewBox="0 0 8 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M0.292893 13.7071C-0.0976311 13.3166 -0.0976311 12.6834 0.292893 12.2929L5.58579 7L0.292893 1.70711C-0.0976311 1.31658 -0.0976311 0.683417 0.292893 0.292893C0.683417 -0.0976311 1.31658 -0.0976311 1.70711 0.292893L7.70711 6.29289C8.09763 6.68342 8.09763 7.31658 7.70711 7.70711L1.70711 13.7071C1.31658 14.0976 0.683417 14.0976 0.292893 13.7071Z" fill="#262626"/>
+          </svg>
+        </button>
       </div>
     </div>
     
@@ -400,18 +404,22 @@ watch(allItems, () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
-.portfolio-navigation {
+/* Галерея с навигацией */
+.portfolio-gallery {
+  position: relative;
   display: flex;
-  gap: 8px;
+  align-items: center;
 }
 
 .nav-btn {
+  position: absolute;
+  z-index: 10;
   width: 40px;
   height: 40px;
-  border: 1px solid #e0e0e0;
+  border: none;
   background: white;
   border-radius: 8px;
   display: flex;
@@ -422,36 +430,39 @@ watch(allItems, () => {
   user-select: none;
   outline: none;
   padding: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.nav-btn.nav-prev {
+  left: 8px;
+}
+
+.nav-btn.nav-next {
+  right: 8px;
 }
 
 .nav-btn svg {
-  width: 14px;
-  height: auto;
+  width: 8px;
+  height: 14px;
 }
 
 .nav-btn svg path {
   transition: fill 0.2s ease;
 }
 
-.nav-btn:hover:not(:disabled) {
+.nav-btn:hover {
   background: #f5f5f5;
-  border-color: #ccc;
-  transform: translateY(-1px);
+  transform: scale(1.05);
 }
 
-.nav-btn:active:not(:disabled) {
-  transform: translateY(0);
+.nav-btn:active {
+  transform: scale(0.95);
   background: #e9ecef;
-}
-
-.nav-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-  background: #f8f9fa;
 }
 
 /* Горизонтальная прокрутка */
 .portfolio-scroll-container {
+  width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;

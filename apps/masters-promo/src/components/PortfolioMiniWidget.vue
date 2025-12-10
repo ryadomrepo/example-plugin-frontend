@@ -136,8 +136,8 @@ onBeforeUnmount(() => {
 }
 
 .preview-image {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 20%;
   object-fit: cover;
   border: 2px solid #ffffff;
