@@ -24,11 +24,12 @@
     <transition name="modal-fade">
       <div v-if="isModalOpen" class="modal-overlay" @click="closeGalleryModal">
         <div class="modal-content" @click.stop>
-          <button class="modal-close" @click="closeGalleryModal">×</button>
           <PortfolioCarousel 
             v-if="allItems.length > 0"
             :items="allItems"
             :autoplay="false"
+            :showCloseButton="true"
+            @close="closeGalleryModal"
           />
         </div>
       </div>
@@ -168,39 +169,17 @@ onBeforeUnmount(() => {
 }
 
 .modal-content {
-  background: white;
-  max-width: 90vw;
-  max-height: 90vh;
-  overflow: hidden;
+  background: transparent;
+  width: 80vw;
+  height: 80vh;
+  max-width: 1200px;
+  max-height: 800px;
+  overflow: visible;
   position: relative;
-  border-radius: 4px;
-}
-
-.modal-close {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: white;
+  border-radius: 8px;
   border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #333;
-  padding: 0;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  transition: all 0.2s ease;
-  line-height: 1;
-}
-
-.modal-close:hover {
-  background: #f5f5f5;
-  transform: scale(1.1);
+  flex-direction: column;
 }
 
 /* Анимация модального окна */
@@ -222,14 +201,6 @@ onBeforeUnmount(() => {
 
   .modal-overlay {
     padding: 10px;
-  }
-
-  .modal-close {
-    top: 12px;
-    right: 12px;
-    width: 30px;
-    height: 30px;
-    font-size: 18px;
   }
 }
 </style>

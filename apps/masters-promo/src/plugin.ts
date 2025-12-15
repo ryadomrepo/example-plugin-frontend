@@ -86,16 +86,26 @@ export function initializePlugin(): () => void {
   // Подписываемся на событие жизненного цикла window
   window.addEventListener('beforeunload', handleBeforeUnload);
 
-  // Fallback: если страница уже загружена (например, при devPluginLoader),
-  // инициализируем слоты автоматически через небольшую задержку
-  setTimeout(() => {
-    if (document.readyState === 'complete') {
-      LoggerUtil.info(
-        'Страница уже загружена, запускаем автоматическую инициализацию',
-      );
-      MastersService.addDynamicPortfolioSlots();
-    }
-  }, 500);
+  // Немедленная инициализация при загрузке плагина
+  // Это решает проблему, когда HOST_READY событие приходит до загрузки плагина
+  const initializeSlots = () => {
+    LoggerUtil.info('Запуск инициализации слотов');
+    MastersService.addDynamicPortfolioSlots();
+  };
+
+  // Запускаем сразу, если документ готов
+  if (
+    document.readyState === 'complete' ||
+    document.readyState === 'interactive'
+  ) {
+    LoggerUtil.info('Документ уже загружен, инициализируем немедленно');
+    initializeSlots();
+  } else {
+    // Иначе ждём загрузки DOM
+    document.addEventListener('DOMContentLoaded', initializeSlots, {
+      once: true,
+    });
+  }
 
   // Возвращаем функцию отписки
   return cleanupPlugin;

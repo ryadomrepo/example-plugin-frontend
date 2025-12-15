@@ -37,7 +37,7 @@ export const manifestPlugin = (): Plugin => {
           .reduce(
             (acc, [fileName, chunk]) => ({
               ...acc,
-              [chunk.name]: [{ name: fileName, type: 'script' }, ...cssFiles],
+              [chunk.name]: [{ name: fileName, type: 'text/javascript' }, ...cssFiles],
             }),
             {},
           );

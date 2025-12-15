@@ -42,6 +42,9 @@ export class MastersService {
       const mastersData =
         await CharmDirectApiService.getMultipleStaffMedia(staffIds);
 
+      // Предзагружаем изображения для быстрого отображения
+      this.preloadImages(mastersData);
+
       // Создаем слоты для каждого мастера с данными
       for (const masterData of mastersData) {
         await this.createPortfolioSlot(masterData);
@@ -59,6 +62,31 @@ export class MastersService {
       // Fallback к старому методу при ошибке
       this.addSlotsForMasterPortfolios();
     }
+  }
+
+  /**
+   * Предзагрузка изображений для быстрого отображения
+   */
+  private static preloadImages(mastersData: StaffMediaResponse[]) {
+    const imageUrls: string[] = [];
+
+    for (const masterData of mastersData) {
+      for (const collection of masterData.collections) {
+        for (const item of collection.items) {
+          if (item.media_url) {
+            imageUrls.push(item.media_url);
+          }
+        }
+      }
+    }
+
+    LoggerUtil.info(`Предзагрузка ${imageUrls.length} изображений`);
+
+    // Предзагружаем изображения в фоне
+    imageUrls.forEach((url) => {
+      const img = new Image();
+      img.src = url;
+    });
   }
 
   /**

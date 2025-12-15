@@ -80,11 +80,12 @@
     <!-- Модальное окно с каруселью -->
     <div v-if="showModal" class="modal-overlay" @click="closeModal">
       <div class="modal-content" @click.stop>
-        <button @click="closeModal" class="close-btn-float">×</button>
         <PortfolioCarousel 
           v-if="carouselItems.length > 0"
           :items="carouselItems"
           :autoplay="false"
+          :showCloseButton="true"
+          @close="closeModal"
         />
       </div>
     </div>
@@ -563,12 +564,17 @@ watch(allItems, () => {
 }
 
 .modal-content {
-  background: white;
-  max-width: 90vw;
-  max-height: 90vh;
-  overflow: hidden;
+  background: transparent;
+  width: 80vw;
+  height: 80vh;
+  max-width: 1200px;
+  max-height: 800px;
+  overflow: visible;
   position: relative;
-  border-radius: 4px;
+  border-radius: 8px;
+  border: none;
+  display: flex;
+  flex-direction: column;
 }
 
 .close-btn-float {
