@@ -50,6 +50,7 @@
                 :src="item.media_url" 
                 :alt="`Работа ${index + 1}`"
                 class="portfolio-image"
+                style="width: 100%; height: 100%; object-fit: cover;"
                 @contextmenu.prevent
                 draggable="false"
               />

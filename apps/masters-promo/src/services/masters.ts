@@ -183,11 +183,11 @@ export class MastersService {
   }
 
   /**
-   * Ожидает появления элемента в DOM с помощью MutationObserver
+   * Ожидает появления элемента в DOM с помощью MutationObserver и polling
    */
   private static waitForElement(
     elementId: string,
-    timeout: number = 5000,
+    timeout: number = 10000,
   ): Promise<HTMLElement | null> {
     return new Promise((resolve) => {
       // Сначала проверяем, есть ли элемент уже
@@ -197,11 +197,16 @@ export class MastersService {
         return;
       }
 
+      let resolved = false;
+      const startTime = Date.now();
+
       // Создаём observer для отслеживания появления элемента
-      const observer = new MutationObserver((mutations, obs) => {
+      const observer = new MutationObserver(() => {
+        if (resolved) return;
         const element = document.getElementById(elementId);
         if (element) {
-          obs.disconnect();
+          resolved = true;
+          observer.disconnect();
           resolve(element);
         }
       });
@@ -211,11 +216,30 @@ export class MastersService {
         subtree: true,
       });
 
-      // Таймаут на случай если элемент так и не появится
-      setTimeout(() => {
-        observer.disconnect();
-        resolve(null);
-      }, timeout);
+      // Дополнительный polling каждые 200ms как fallback
+      const pollInterval = setInterval(() => {
+        if (resolved) {
+          clearInterval(pollInterval);
+          return;
+        }
+
+        const element = document.getElementById(elementId);
+        if (element) {
+          resolved = true;
+          observer.disconnect();
+          clearInterval(pollInterval);
+          resolve(element);
+          return;
+        }
+
+        // Проверяем таймаут
+        if (Date.now() - startTime >= timeout) {
+          resolved = true;
+          observer.disconnect();
+          clearInterval(pollInterval);
+          resolve(null);
+        }
+      }, 200);
     });
   }
 
@@ -227,7 +251,7 @@ export class MastersService {
     prefix: string = 'portfolio-widget',
   ) {
     const elementId = `${prefix}-${staffId}`;
-    
+
     // Ждём появления элемента в DOM
     const element = await this.waitForElement(elementId);
 

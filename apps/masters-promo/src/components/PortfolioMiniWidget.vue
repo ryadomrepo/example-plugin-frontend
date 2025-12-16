@@ -13,6 +13,7 @@
             :src="item.media_url" 
             :alt="`Работа ${index + 1}`"
             class="preview-image"
+            style="width: 40px; height: 40px; object-fit: cover;"
             @contextmenu.prevent
             draggable="false"
           />
