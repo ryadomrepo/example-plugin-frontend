@@ -120,10 +120,8 @@ export class MastersService {
         `Создан динамический слот портфолио для мастера ${masterId}: ${slotId} (${totalItems} работ)`,
       );
 
-      // Монтируем Vue компонент в созданный элемент
-      setTimeout(() => {
-        this.mountPortfolioWidget(masterData.staff_id);
-      }, 100);
+      // Монтируем Vue компонент в созданный элемент (ждём появления через MutationObserver)
+      this.mountPortfolioWidget(masterData.staff_id);
     } catch (error) {
       LoggerUtil.error(
         `Ошибка при создании слота для мастера ${masterData.staff_id}:`,
@@ -174,10 +172,8 @@ export class MastersService {
         `Создан слот мини-виджета для мастера ${masterId} (master_tag): ${slotId} (${totalItems} работ)`,
       );
 
-      // Монтируем Vue компонент в созданный элемент
-      setTimeout(() => {
-        this.mountPortfolioWidget(masterData.staff_id, 'portfolio-mini-widget');
-      }, 100);
+      // Монтируем Vue компонент в созданный элемент (ждём появления через MutationObserver)
+      this.mountPortfolioWidget(masterData.staff_id, 'portfolio-mini-widget');
     } catch (error) {
       LoggerUtil.error(
         `Ошибка при создании слота мини-виджета для мастера ${masterData.staff_id}:`,
@@ -187,19 +183,64 @@ export class MastersService {
   }
 
   /**
+   * Ожидает появления элемента в DOM с помощью MutationObserver
+   */
+  private static waitForElement(
+    elementId: string,
+    timeout: number = 5000,
+  ): Promise<HTMLElement | null> {
+    return new Promise((resolve) => {
+      // Сначала проверяем, есть ли элемент уже
+      const existingElement = document.getElementById(elementId);
+      if (existingElement) {
+        resolve(existingElement);
+        return;
+      }
+
+      // Создаём observer для отслеживания появления элемента
+      const observer = new MutationObserver((mutations, obs) => {
+        const element = document.getElementById(elementId);
+        if (element) {
+          obs.disconnect();
+          resolve(element);
+        }
+      });
+
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+      });
+
+      // Таймаут на случай если элемент так и не появится
+      setTimeout(() => {
+        observer.disconnect();
+        resolve(null);
+      }, timeout);
+    });
+  }
+
+  /**
    * Монтирует Vue компонент PortfolioWidget или PortfolioMiniWidget в HTML элемент
    */
-  private static mountPortfolioWidget(
+  private static async mountPortfolioWidget(
     staffId: string,
     prefix: string = 'portfolio-widget',
   ) {
     const elementId = `${prefix}-${staffId}`;
-    const element = document.getElementById(elementId);
+    
+    // Ждём появления элемента в DOM
+    const element = await this.waitForElement(elementId);
 
     if (!element) {
       LoggerUtil.warn(
         `Элемент ${elementId} не найден для монтирования Vue компонента`,
       );
+      return;
+    }
+
+    // Проверяем, не был ли уже смонтирован компонент
+    if (element.hasAttribute('data-vue-mounted')) {
+      LoggerUtil.info(`Компонент уже смонтирован в ${elementId}`);
       return;
     }
 
@@ -215,6 +256,7 @@ export class MastersService {
       });
 
       app.mount(element);
+      element.setAttribute('data-vue-mounted', 'true');
       LoggerUtil.info(
         `Vue компонент ${component.name || 'Portfolio'} смонтирован в ${elementId}`,
       );

@@ -14,57 +14,60 @@
     
     <!-- Изображение -->
     <div class="image-container">
-      <!-- Навигационная кнопка влево (мобильная) -->
-      <button 
-        v-show="items.length > 1"
-        class="nav-arrow nav-arrow--left nav-arrow--mobile" 
-        :style="{ visibility: currentIndex === 0 ? 'hidden' : 'visible' }"
-        @click="prevSlide"
-      >
-        <svg width="8" height="14" viewBox="0 0 8 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path fill-rule="evenodd" clip-rule="evenodd" d="M7.70711 0.292893C8.09763 0.683417 8.09763 1.31658 7.70711 1.70711L2.41421 7L7.70711 12.2929C8.09763 12.6834 8.09763 13.3166 7.70711 13.7071C7.31658 14.0976 6.68342 14.0976 6.29289 13.7071L0.292893 7.70711C-0.0976311 7.31658 -0.0976311 6.68342 0.292893 6.29289L6.29289 0.292893C6.68342 -0.0976311 7.31658 -0.0976311 7.70711 0.292893Z" fill="#262626"/>
-        </svg>
-      </button>
-      
-      <img 
-        v-if="items[currentIndex]?.media_url"
-        :src="items[currentIndex].media_url" 
-        :alt="`Портфолио ${currentIndex + 1}`"
-        class="main-image"
-        @load="onImageLoad"
-        @error="onImageError"
-        @contextmenu.prevent
-        draggable="false"
-      />
-      <div v-else class="image-placeholder">
-        Загрузка изображения...
+      <!-- Wrapper для изображения с элементами управления -->
+      <div class="image-wrapper">
+        <img 
+          v-if="items[currentIndex]?.media_url"
+          :src="items[currentIndex].media_url" 
+          :alt="`Портфолио ${currentIndex + 1}`"
+          class="main-image"
+          @load="onImageLoad"
+          @error="onImageError"
+          @contextmenu.prevent
+          draggable="false"
+        />
+        <div v-else class="image-placeholder">
+          Загрузка изображения...
+        </div>
+        
+        <!-- Навигационная кнопка влево (мобильная) - внутри wrapper -->
+        <button 
+          v-show="items.length > 1"
+          class="nav-arrow nav-arrow--left nav-arrow--mobile" 
+          :style="{ visibility: currentIndex === 0 ? 'hidden' : 'visible' }"
+          @click="prevSlide"
+        >
+          <svg width="8" height="14" viewBox="0 0 8 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M7.70711 0.292893C8.09763 0.683417 8.09763 1.31658 7.70711 1.70711L2.41421 7L7.70711 12.2929C8.09763 12.6834 8.09763 13.3166 7.70711 13.7071C7.31658 14.0976 6.68342 14.0976 6.29289 13.7071L0.292893 7.70711C-0.0976311 7.31658 -0.0976311 6.68342 0.292893 6.29289L6.29289 0.292893C6.68342 -0.0976311 7.31658 -0.0976311 7.70711 0.292893Z" fill="#262626"/>
+          </svg>
+        </button>
+        
+        <!-- Навигационная кнопка вправо (мобильная) -->
+        <button 
+          v-show="items.length > 1"
+          class="nav-arrow nav-arrow--right nav-arrow--mobile" 
+          :style="{ visibility: currentIndex === items.length - 1 ? 'hidden' : 'visible' }"
+          @click="nextSlide"
+        >
+          <svg width="8" height="14" viewBox="0 0 8 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M0.292893 13.7071C-0.0976311 13.3166 -0.0976311 12.6834 0.292893 12.2929L5.58579 7L0.292893 1.70711C-0.0976311 1.31658 -0.0976311 0.683417 0.292893 0.292893C0.683417 -0.0976311 1.31658 -0.0976311 1.70711 0.292893L7.70711 6.29289C8.09763 6.68342 8.09763 7.31658 7.70711 7.70711L1.70711 13.7071C1.31658 14.0976 0.683417 14.0976 0.292893 13.7071Z" fill="#262626"/>
+          </svg>
+        </button>
+        
+        <!-- Счётчик изображений -->
+        <div class="image-counter" v-if="items.length > 1">
+          {{ currentIndex + 1 }} / {{ items.length }}
+        </div>
+        
+        <!-- Кнопка закрытия -->
+        <button 
+          v-if="showCloseButton" 
+          class="close-btn" 
+          @click="emit('close')"
+        >
+          ×
+        </button>
       </div>
-      
-      <!-- Навигационная кнопка вправо (мобильная) -->
-      <button 
-        v-show="items.length > 1"
-        class="nav-arrow nav-arrow--right nav-arrow--mobile" 
-        :style="{ visibility: currentIndex === items.length - 1 ? 'hidden' : 'visible' }"
-        @click="nextSlide"
-      >
-        <svg width="8" height="14" viewBox="0 0 8 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path fill-rule="evenodd" clip-rule="evenodd" d="M0.292893 13.7071C-0.0976311 13.3166 -0.0976311 12.6834 0.292893 12.2929L5.58579 7L0.292893 1.70711C-0.0976311 1.31658 -0.0976311 0.683417 0.292893 0.292893C0.683417 -0.0976311 1.31658 -0.0976311 1.70711 0.292893L7.70711 6.29289C8.09763 6.68342 8.09763 7.31658 7.70711 7.70711L1.70711 13.7071C1.31658 14.0976 0.683417 14.0976 0.292893 13.7071Z" fill="#262626"/>
-        </svg>
-      </button>
-      
-      <!-- Счётчик изображений -->
-      <div class="image-counter" v-if="items.length > 1">
-        {{ currentIndex + 1 }} / {{ items.length }}
-      </div>
-      
-      <!-- Кнопка закрытия -->
-      <button 
-        v-if="showCloseButton" 
-        class="close-btn" 
-        @click="emit('close')"
-      >
-        ×
-      </button>
     </div>
     
     <!-- Навигационная кнопка вправо (десктоп) -->
@@ -104,6 +107,16 @@ const props = withDefaults(defineProps<Props>(), {
 
 const currentIndex = ref(0);
 let autoplayTimer: number | null = null;
+
+// Предзагрузка всех изображений при монтировании
+const preloadAllImages = () => {
+  props.items.forEach((item) => {
+    if (item.media_url) {
+      const img = new Image();
+      img.src = item.media_url;
+    }
+  });
+};
 
 const nextSlide = () => {
   if (currentIndex.value < props.items.length - 1) {
@@ -157,6 +170,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 };
 
 onMounted(() => {
+  preloadAllImages();
   startAutoplay();
   document.addEventListener('keydown', handleKeydown);
 });
@@ -185,12 +199,18 @@ onUnmounted(() => {
 
 /* Контейнер изображения */
 .image-container {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   max-width: calc(100% - 120px);
   max-height: 100%;
+}
+
+/* Wrapper для позиционирования элементов относительно изображения */
+.image-wrapper {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
 }
 
 .main-image {
@@ -300,8 +320,11 @@ onUnmounted(() => {
   }
 
   .image-container {
-    position: relative;
     max-width: 100%;
+    width: 100%;
+  }
+
+  .image-wrapper {
     width: 100%;
   }
 
@@ -338,7 +361,6 @@ onUnmounted(() => {
   .image-counter {
     bottom: 12px;
     font-size: 12px;
-    padding: 4px 10px;
   }
 }
 </style>

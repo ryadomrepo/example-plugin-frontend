@@ -495,6 +495,7 @@ watch(allItems, () => {
   overflow: hidden;
   transition: transform 0.2s, box-shadow 0.2s;
   background: #f8f9fa;
+  position: relative;
 }
 
 .portfolio-card:hover {
