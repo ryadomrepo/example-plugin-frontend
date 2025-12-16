@@ -9,6 +9,13 @@ import PortfolioWidget from '../components/PortfolioWidget.vue';
 import PortfolioMiniWidget from '../components/PortfolioMiniWidget.vue';
 
 export class MastersService {
+  // Хранилище смонтированных Vue приложений для очистки при навигации
+  private static mountedApps: Map<string, ReturnType<typeof createApp>> =
+    new Map();
+
+  // Хранилище созданных слотов для переиспользования при навигации
+  private static createdSlots: Map<string, string> = new Map();
+
   /**
    * Инициализация сервиса мастеров
    */
@@ -20,10 +27,28 @@ export class MastersService {
   }
 
   /**
+   * Очистка всех смонтированных приложений
+   */
+  private static cleanupMountedApps() {
+    this.mountedApps.forEach((app, elementId) => {
+      try {
+        app.unmount();
+        LoggerUtil.info(`Размонтирован компонент ${elementId}`);
+      } catch {
+        // Игнорируем ошибки при размонтировании
+      }
+    });
+    this.mountedApps.clear();
+  }
+
+  /**
    * Добавляет слоты с портфолио для мастеров (новая версия с динамическими данными)
    */
   static async addDynamicPortfolioSlots() {
     this.initialize();
+
+    // Очищаем предыдущие смонтированные приложения при навигации
+    this.cleanupMountedApps();
 
     if (!WidgetApiUtil.isMethodAvailable('addSlotInfo')) {
       LoggerUtil.error('Метод addSlotInfo недоступен');
@@ -95,6 +120,7 @@ export class MastersService {
   private static async createPortfolioSlot(masterData: StaffMediaResponse) {
     try {
       const masterId = parseInt(masterData.staff_id);
+      const slotKey = `portfolio-widget-${masterId}`;
       const totalItems = masterData.collections.reduce(
         (sum, col) => sum + col.items.length,
         0,
@@ -105,19 +131,28 @@ export class MastersService {
         return;
       }
 
-      // Создаем слот с упрощенной конфигурацией
+      // Проверяем, есть ли уже созданный слот для этого мастера
+      const existingSlotId = this.createdSlots.get(slotKey);
+
+      // Создаем или обновляем слот с упрощенной конфигурацией
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const slotId = (window as any).widgetApi.addSlotInfo({
-        containerType: 'staff_info_comments',
-        containerOptions: { masterId },
-        componentType: 'custom_html',
-        componentOptions: {
-          html: `<div id="portfolio-widget-${masterId}" data-staff-id="${masterData.staff_id}"></div>`,
+      const slotId = (window as any).widgetApi.addSlotInfo(
+        {
+          containerType: 'staff_info_comments',
+          containerOptions: { masterId },
+          componentType: 'custom_html',
+          componentOptions: {
+            html: `<div id="portfolio-widget-${masterId}" data-staff-id="${masterData.staff_id}"></div>`,
+          },
         },
-      });
+        existingSlotId,
+      );
+
+      // Сохраняем slotId для последующего переиспользования
+      this.createdSlots.set(slotKey, slotId);
 
       LoggerUtil.info(
-        `Создан динамический слот портфолио для мастера ${masterId}: ${slotId} (${totalItems} работ)`,
+        `${existingSlotId ? 'Обновлён' : 'Создан'} слот портфолио для мастера ${masterId}: ${slotId} (${totalItems} работ)`,
       );
 
       // Монтируем Vue компонент в созданный элемент (ждём появления через MutationObserver)
@@ -145,6 +180,7 @@ export class MastersService {
   ) {
     try {
       const masterId = parseInt(masterData.staff_id);
+      const slotKey = `portfolio-mini-widget-${masterId}`;
       const totalItems = masterData.collections.reduce(
         (sum, col) => sum + col.items.length,
         0,
@@ -157,19 +193,28 @@ export class MastersService {
         return;
       }
 
+      // Проверяем, есть ли уже созданный слот для этого мастера
+      const existingSlotId = this.createdSlots.get(slotKey);
+
       // Используем master_tag
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const slotId = (window as any).widgetApi.addSlotInfo({
-        containerType: 'master_tag',
-        containerOptions: { masterId },
-        componentType: 'custom_html',
-        componentOptions: {
-          html: `<div id="portfolio-mini-widget-${masterId}" data-staff-id="${masterData.staff_id}"></div>`,
+      const slotId = (window as any).widgetApi.addSlotInfo(
+        {
+          containerType: 'master_tag',
+          containerOptions: { masterId },
+          componentType: 'custom_html',
+          componentOptions: {
+            html: `<div id="portfolio-mini-widget-${masterId}" data-staff-id="${masterData.staff_id}"></div>`,
+          },
         },
-      });
+        existingSlotId,
+      );
+
+      // Сохраняем slotId для последующего переиспользования
+      this.createdSlots.set(slotKey, slotId);
 
       LoggerUtil.info(
-        `Создан слот мини-виджета для мастера ${masterId} (master_tag): ${slotId} (${totalItems} работ)`,
+        `${existingSlotId ? 'Обновлён' : 'Создан'} слот мини-виджета для мастера ${masterId} (master_tag): ${slotId} (${totalItems} работ)`,
       );
 
       // Монтируем Vue компонент в созданный элемент (ждём появления через MutationObserver)
@@ -281,6 +326,10 @@ export class MastersService {
 
       app.mount(element);
       element.setAttribute('data-vue-mounted', 'true');
+
+      // Сохраняем приложение для последующей очистки
+      this.mountedApps.set(elementId, app);
+
       LoggerUtil.info(
         `Vue компонент ${component.name || 'Portfolio'} смонтирован в ${elementId}`,
       );
