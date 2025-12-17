@@ -328,10 +328,10 @@ watch(allItems, () => {
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 .portfolio-widget {
-  padding: 16px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
@@ -608,7 +608,7 @@ watch(allItems, () => {
 /* Адаптивность */
 @media (max-width: 768px) {
   .portfolio-widget {
-    padding: 12px;
+    padding: 0;
   }
   
   .collections-preview {
@@ -617,15 +617,20 @@ watch(allItems, () => {
   }
   
   .modal-overlay {
-    padding: 10px;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.8);
+  }
+  
+  .modal-content {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 0;
   }
   
   .close-btn-float {
-    top: 12px;
-    right: 12px;
-    width: 30px;
-    height: 30px;
-    font-size: 18px;
+    display: none;
   }
 }
 </style>

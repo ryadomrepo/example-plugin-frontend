@@ -13,9 +13,27 @@
     </button>
     
     <!-- Изображение -->
-    <div class="image-container">
+    <div 
+      class="image-container"
+      @touchstart="handleTouchStart"
+      @touchend="handleTouchEnd"
+    >
       <!-- Wrapper для изображения с элементами управления -->
       <div class="image-wrapper">
+        <!-- Мобильная шапка - поверх изображения сверху -->
+        <div class="mobile-header">
+          <div class="mobile-counter" v-if="items.length > 1">
+            {{ currentIndex + 1 }} из {{ items.length }}
+          </div>
+          <button 
+            v-if="showCloseButton" 
+            class="mobile-close-btn" 
+            @click="emit('close')"
+          >
+            ×
+          </button>
+        </div>
+
         <img 
           v-if="items[currentIndex]?.media_url"
           :src="items[currentIndex].media_url" 
@@ -30,39 +48,15 @@
           Загрузка изображения...
         </div>
         
-        <!-- Навигационная кнопка влево (мобильная) - внутри wrapper -->
-        <button 
-          v-show="items.length > 1"
-          class="nav-arrow nav-arrow--left nav-arrow--mobile" 
-          :style="{ visibility: currentIndex === 0 ? 'hidden' : 'visible' }"
-          @click="prevSlide"
-        >
-          <svg width="8" height="14" viewBox="0 0 8 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M7.70711 0.292893C8.09763 0.683417 8.09763 1.31658 7.70711 1.70711L2.41421 7L7.70711 12.2929C8.09763 12.6834 8.09763 13.3166 7.70711 13.7071C7.31658 14.0976 6.68342 14.0976 6.29289 13.7071L0.292893 7.70711C-0.0976311 7.31658 -0.0976311 6.68342 0.292893 6.29289L6.29289 0.292893C6.68342 -0.0976311 7.31658 -0.0976311 7.70711 0.292893Z" fill="#262626"/>
-          </svg>
-        </button>
-        
-        <!-- Навигационная кнопка вправо (мобильная) -->
-        <button 
-          v-show="items.length > 1"
-          class="nav-arrow nav-arrow--right nav-arrow--mobile" 
-          :style="{ visibility: currentIndex === items.length - 1 ? 'hidden' : 'visible' }"
-          @click="nextSlide"
-        >
-          <svg width="8" height="14" viewBox="0 0 8 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M0.292893 13.7071C-0.0976311 13.3166 -0.0976311 12.6834 0.292893 12.2929L5.58579 7L0.292893 1.70711C-0.0976311 1.31658 -0.0976311 0.683417 0.292893 0.292893C0.683417 -0.0976311 1.31658 -0.0976311 1.70711 0.292893L7.70711 6.29289C8.09763 6.68342 8.09763 7.31658 7.70711 7.70711L1.70711 13.7071C1.31658 14.0976 0.683417 14.0976 0.292893 13.7071Z" fill="#262626"/>
-          </svg>
-        </button>
-        
-        <!-- Счётчик изображений -->
-        <div class="image-counter" v-if="items.length > 1">
-          {{ currentIndex + 1 }} / {{ items.length }}
+        <!-- Счётчик изображений (десктоп) -->
+        <div class="image-counter image-counter--desktop" v-if="items.length > 1">
+          {{ currentIndex + 1 }} из {{ items.length }}
         </div>
         
-        <!-- Кнопка закрытия -->
+        <!-- Кнопка закрытия (десктоп) -->
         <button 
           v-if="showCloseButton" 
-          class="close-btn" 
+          class="close-btn close-btn--desktop" 
           @click="emit('close')"
         >
           ×
@@ -169,6 +163,34 @@ const handleKeydown = (event: KeyboardEvent) => {
   }
 };
 
+// Обработка свайпа для мобильных устройств
+let touchStartX = 0;
+let touchEndX = 0;
+
+const handleTouchStart = (event: TouchEvent) => {
+  touchStartX = event.changedTouches[0].screenX;
+};
+
+const handleTouchEnd = (event: TouchEvent) => {
+  touchEndX = event.changedTouches[0].screenX;
+  handleSwipe();
+};
+
+const handleSwipe = () => {
+  const swipeThreshold = 50;
+  const diff = touchStartX - touchEndX;
+  
+  if (Math.abs(diff) > swipeThreshold) {
+    if (diff > 0) {
+      // Свайп влево - следующий слайд
+      nextSlide();
+    } else {
+      // Свайп вправо - предыдущий слайд
+      prevSlide();
+    }
+  }
+};
+
 onMounted(() => {
   preloadAllImages();
   startAutoplay();
@@ -217,8 +239,8 @@ onUnmounted(() => {
   max-width: 100%;
   max-height: 70vh;
   object-fit: contain;
-  border-radius: 8px;
-  border: 4px solid white;
+  border-radius: 16px;
+  border: none;
   box-sizing: border-box;
   user-select: none;
   -webkit-user-drag: none;
@@ -272,44 +294,59 @@ onUnmounted(() => {
   display: none;
 }
 
-/* Счётчик изображений */
+/* Счётчик изображений - сверху по центру */
 .image-counter {
   position: absolute;
-  bottom: 16px;
+  top: -40px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.6);
+  background: transparent;
   color: white;
-  padding: 6px 12px;
-  border-radius: 16px;
+  padding: 0;
+  border-radius: 0;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 400;
+  white-space: nowrap;
 }
 
-/* Кнопка закрытия */
+/* Кнопка закрытия - справа сверху вне изображения */
 .close-btn {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  background: white;
+  top: -40px;
+  right: -40px;
+  background: transparent;
   border: none;
-  font-size: 20px;
+  font-size: 24px;
   cursor: pointer;
-  color: #333;
+  color: white;
   padding: 0;
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: none;
   line-height: 1;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
 }
 
 .close-btn:hover {
-  background: #f5f5f5;
+  background: transparent;
+  opacity: 1;
+}
+
+/* Мобильная шапка - скрыта на десктопе */
+.mobile-header {
+  display: none;
+}
+
+/* Десктоп версия каунтера и крестика */
+.image-counter--desktop,
+.close-btn--desktop {
+  display: flex;
 }
 
 /* Адаптивность - мобильная версия */
@@ -317,50 +354,89 @@ onUnmounted(() => {
   .portfolio-carousel {
     padding: 0;
     gap: 0;
+    flex-direction: column;
+    height: 100%;
+    background: transparent;
+    position: relative;
+  }
+
+  /* Мобильная шапка - над изображением */
+  .mobile-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px 16px;
+    background: transparent;
+    position: absolute;
+    top: -40px;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    box-sizing: border-box;
+  }
+
+  .mobile-counter {
+    font-size: 14px;
+    font-weight: 500;
+    color: white;
+  }
+
+  .mobile-close-btn {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: white;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .image-container {
     max-width: 100%;
     width: 100%;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .image-wrapper {
     width: 100%;
+    max-width: 100%;
+    display: block;
+    position: relative;
+    overflow: visible;
   }
 
   .main-image {
-    max-height: 70vh;
-    width: 100%;
-    border-radius: 8px;
-    border: 4px solid white;
+    max-height: 100%;
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    border: none;
+    object-fit: contain;
   }
 
-  /* Скрыть десктопные стрелки, показать мобильные */
+  /* Скрыть десктопные элементы */
   .nav-arrow--desktop {
     display: none;
   }
 
-  .nav-arrow--mobile {
-    display: flex;
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 36px;
-    height: 36px;
-    z-index: 10;
+  .image-counter--desktop {
+    display: none;
   }
 
-  .nav-arrow--mobile.nav-arrow--left {
-    left: 12px;
-  }
-
-  .nav-arrow--mobile.nav-arrow--right {
-    right: 12px;
-  }
-
-  .image-counter {
-    bottom: 12px;
-    font-size: 12px;
+  .close-btn--desktop {
+    display: none;
   }
 }
 </style>
