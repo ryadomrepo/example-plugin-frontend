@@ -1,9 +1,19 @@
 <template>
   <div class="portfolio-widget">
-    <!-- Состояние загрузки -->
-    <div v-if="loadingState.isLoading" class="loading-state">
-      <div class="spinner"></div>
-      <p>Загрузка портфолио...</p>
+    <!-- Состояние загрузки - skeleton -->
+    <div v-if="loadingState.isLoading" class="portfolio-content">
+      <div class="portfolio-header">
+        <h3 class="portfolio-title">Портфолио</h3>
+      </div>
+      <div class="portfolio-gallery">
+        <div class="portfolio-scroll-container">
+          <div class="portfolio-scroll">
+            <div v-for="i in 4" :key="i" class="portfolio-card skeleton-card">
+              <div class="skeleton-shimmer"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     
     <!-- Состояние ошибки -->
@@ -319,9 +329,16 @@ onUnmounted(() => {
 
 // Следим за изменениями в allItems и обновляем кнопки
 watch(allItems, () => {
+  // Несколько вызовов для надежности после рендеринга
   setTimeout(() => {
+    if (scrollContainer.value) {
+      scrollContainer.value.addEventListener('scroll', updateScrollButtons);
+      scrollContainer.value.style.cursor = 'grab';
+    }
     updateScrollButtons();
-  }, 100);
+  }, 50);
+  setTimeout(() => updateScrollButtons(), 200);
+  setTimeout(() => updateScrollButtons(), 500);
 });
 </script>
 
@@ -346,19 +363,31 @@ watch(allItems, () => {
   text-align: center;
 }
 
-.spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #007bff;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 16px;
+/* Skeleton загрузка */
+.skeleton-card {
+  background: #e9ecef;
+  position: relative;
+  overflow: hidden;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+.skeleton-shimmer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 .error-icon, .empty-icon {
