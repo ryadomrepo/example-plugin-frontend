@@ -51,6 +51,7 @@
                 :alt="`Работа ${index + 1}`"
                 class="portfolio-image"
                 style="width: 100%; height: 100%; object-fit: cover;"
+                @load="(e: Event) => (e.target as HTMLImageElement)?.classList.add('loaded')"
                 @contextmenu.prevent
                 draggable="false"
               />
@@ -115,7 +116,7 @@ const loadingState = ref<LoadingState>({
 const showModal = ref(false);
 const selectedCollection = ref<Collection | null>(null);
 const scrollContainer = ref<HTMLElement | null>(null);
-const canScrollLeft = ref(true);
+const canScrollLeft = ref(false);
 const canScrollRight = ref(true);
 
 // Переменные для drag-to-scroll
@@ -499,6 +500,15 @@ watch(allItems, () => {
   position: relative;
 }
 
+.portfolio-card .portfolio-image {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.portfolio-card .portfolio-image.loaded {
+  opacity: 1;
+}
+
 .portfolio-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
@@ -561,7 +571,7 @@ watch(allItems, () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 999999;
   padding: 20px;
 }
 

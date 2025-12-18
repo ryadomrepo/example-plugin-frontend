@@ -309,11 +309,11 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
-/* Кнопка закрытия - справа сверху вне изображения */
+/* Кнопка закрытия - в правом верхнем углу экрана */
 .close-btn {
-  position: absolute;
-  top: -40px;
-  right: -40px;
+  position: fixed;
+  top: 20px;
+  right: 20px;
   background: transparent;
   border: none;
   font-size: 24px;
