@@ -27,7 +27,7 @@ export class MastersService {
   }
 
   /**
-   * Очистка всех смонтированных приложений
+   * Очистка всех смонтированных приложений и слотов
    */
   private static cleanupMountedApps() {
     this.mountedApps.forEach((app, elementId) => {
@@ -39,6 +39,10 @@ export class MastersService {
       }
     });
     this.mountedApps.clear();
+    
+    // Очищаем слоты при навигации, чтобы создавать новые
+    this.createdSlots.clear();
+    LoggerUtil.info('Очищены слоты для пересоздания');
   }
 
   /**
