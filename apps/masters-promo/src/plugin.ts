@@ -65,17 +65,17 @@ export function cleanupPlugin(): void {
 
   // Отписываемся от события жизненного цикла window
   window.removeEventListener('beforeunload', handleBeforeUnload);
-  
+
   // Отписываемся от событий навигации
   window.removeEventListener('popstate', handleNavigation);
   window.removeEventListener('hashchange', handleNavigation);
-  
+
   // Останавливаем MutationObserver
   if (navigationObserver) {
     navigationObserver.disconnect();
     navigationObserver = null;
   }
-  
+
   // Останавливаем периодическую проверку
   if (navigationCheckInterval) {
     clearInterval(navigationCheckInterval);
@@ -95,7 +95,10 @@ function handleNavigation(): void {
   const currentUrl = window.location.href;
   if (currentUrl !== lastUrl) {
     lastUrl = currentUrl;
-    LoggerUtil.info('Обнаружена навигация, переинициализируем слоты:', currentUrl);
+    LoggerUtil.info(
+      'Обнаружена навигация, переинициализируем слоты:',
+      currentUrl,
+    );
     MastersService.addDynamicPortfolioSlots();
   }
 }
@@ -126,13 +129,13 @@ export function initializePlugin(): () => void {
   // Перехватываем pushState и replaceState для отслеживания программной навигации
   const originalPushState = history.pushState.bind(history);
   const originalReplaceState = history.replaceState.bind(history);
-  
-  history.pushState = function(...args) {
+
+  history.pushState = function (...args) {
     originalPushState(...args);
     setTimeout(handleNavigation, 100);
   };
-  
-  history.replaceState = function(...args) {
+
+  history.replaceState = function (...args) {
     originalReplaceState(...args);
     setTimeout(handleNavigation, 100);
   };
@@ -140,10 +143,11 @@ export function initializePlugin(): () => void {
   // MutationObserver для отслеживания изменений DOM (SPA навигация)
   navigationObserver = new MutationObserver((mutations) => {
     // Проверяем, есть ли значительные изменения в DOM
-    const hasSignificantChanges = mutations.some(mutation => 
-      mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0
+    const hasSignificantChanges = mutations.some(
+      (mutation) =>
+        mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0,
     );
-    
+
     if (hasSignificantChanges) {
       // Debounce - не вызываем слишком часто
       setTimeout(handleNavigation, 200);

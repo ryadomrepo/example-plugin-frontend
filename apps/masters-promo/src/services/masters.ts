@@ -27,7 +27,7 @@ export class MastersService {
   }
 
   /**
-   * Очистка всех смонтированных приложений и слотов
+   * Очистка всех смонтированных приложений (но НЕ слотов - они переиспользуются)
    */
   private static cleanupMountedApps() {
     this.mountedApps.forEach((app, elementId) => {
@@ -39,10 +39,7 @@ export class MastersService {
       }
     });
     this.mountedApps.clear();
-    
-    // Очищаем слоты при навигации, чтобы создавать новые
-    this.createdSlots.clear();
-    LoggerUtil.info('Очищены слоты для пересоздания');
+    // НЕ очищаем createdSlots - они должны переиспользоваться через existingSlotId
   }
 
   /**
@@ -311,10 +308,25 @@ export class MastersService {
       return;
     }
 
-    // Проверяем, не был ли уже смонтирован компонент
-    if (element.hasAttribute('data-vue-mounted')) {
+    // Если компонент уже смонтирован в этот элемент - пропускаем
+    // Но проверяем через mountedApps, а не через атрибут (элемент мог быть пересоздан)
+    const existingApp = this.mountedApps.get(elementId);
+    if (existingApp && element.hasAttribute('data-vue-mounted')) {
       LoggerUtil.info(`Компонент уже смонтирован в ${elementId}`);
       return;
+    }
+
+    // Если был старый app но элемент новый - размонтируем старый
+    if (existingApp) {
+      try {
+        existingApp.unmount();
+        this.mountedApps.delete(elementId);
+        LoggerUtil.info(
+          `Размонтирован старый компонент ${elementId} для пересоздания`,
+        );
+      } catch {
+        // Игнорируем ошибки
+      }
     }
 
     try {
