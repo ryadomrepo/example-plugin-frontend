@@ -65,6 +65,39 @@ export function cleanupPlugin(): void {
 
   // Отписываемся от события жизненного цикла window
   window.removeEventListener('beforeunload', handleBeforeUnload);
+  
+  // Отписываемся от событий навигации
+  window.removeEventListener('popstate', handleNavigation);
+  window.removeEventListener('hashchange', handleNavigation);
+  
+  // Останавливаем MutationObserver
+  if (navigationObserver) {
+    navigationObserver.disconnect();
+    navigationObserver = null;
+  }
+  
+  // Останавливаем периодическую проверку
+  if (navigationCheckInterval) {
+    clearInterval(navigationCheckInterval);
+    navigationCheckInterval = null;
+  }
+}
+
+// Переменные для отслеживания навигации
+let lastUrl = '';
+let navigationObserver: MutationObserver | null = null;
+let navigationCheckInterval: ReturnType<typeof setInterval> | null = null;
+
+/**
+ * Обработчик навигации - вызывается при изменении URL или DOM
+ */
+function handleNavigation(): void {
+  const currentUrl = window.location.href;
+  if (currentUrl !== lastUrl) {
+    lastUrl = currentUrl;
+    LoggerUtil.info('Обнаружена навигация, переинициализируем слоты:', currentUrl);
+    MastersService.addDynamicPortfolioSlots();
+  }
 }
 
 /**
@@ -86,10 +119,55 @@ export function initializePlugin(): () => void {
   // Подписываемся на событие жизненного цикла window
   window.addEventListener('beforeunload', handleBeforeUnload);
 
+  // Подписываемся на события навигации SPA
+  window.addEventListener('popstate', handleNavigation);
+  window.addEventListener('hashchange', handleNavigation);
+
+  // Перехватываем pushState и replaceState для отслеживания программной навигации
+  const originalPushState = history.pushState.bind(history);
+  const originalReplaceState = history.replaceState.bind(history);
+  
+  history.pushState = function(...args) {
+    originalPushState(...args);
+    setTimeout(handleNavigation, 100);
+  };
+  
+  history.replaceState = function(...args) {
+    originalReplaceState(...args);
+    setTimeout(handleNavigation, 100);
+  };
+
+  // MutationObserver для отслеживания изменений DOM (SPA навигация)
+  navigationObserver = new MutationObserver((mutations) => {
+    // Проверяем, есть ли значительные изменения в DOM
+    const hasSignificantChanges = mutations.some(mutation => 
+      mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0
+    );
+    
+    if (hasSignificantChanges) {
+      // Debounce - не вызываем слишком часто
+      setTimeout(handleNavigation, 200);
+    }
+  });
+
+  // Наблюдаем за изменениями в body
+  navigationObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+
+  // Периодическая проверка URL (fallback для SPA)
+  navigationCheckInterval = setInterval(() => {
+    const currentUrl = window.location.href;
+    if (currentUrl !== lastUrl) {
+      handleNavigation();
+    }
+  }, 1000);
+
   // Немедленная инициализация при загрузке плагина
-  // Это решает проблему, когда HOST_READY событие приходит до загрузки плагина
   const initializeSlots = () => {
     LoggerUtil.info('Запуск инициализации слотов');
+    lastUrl = window.location.href;
     MastersService.addDynamicPortfolioSlots();
   };
 
