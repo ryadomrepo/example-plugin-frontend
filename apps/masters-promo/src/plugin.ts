@@ -87,20 +87,57 @@ export function cleanupPlugin(): void {
 let lastUrl = '';
 let navigationObserver: MutationObserver | null = null;
 let navigationCheckInterval: ReturnType<typeof setInterval> | null = null;
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * Проверяет, нужно ли переинициализировать слоты
+ * Возвращает true если URL изменился или наши виджеты исчезли из DOM
+ */
+function shouldReinitialize(): boolean {
+  const currentUrl = window.location.href;
+
+  // Если URL изменился - точно нужно переинициализировать
+  if (currentUrl !== lastUrl) {
+    return true;
+  }
+
+  // Проверяем, есть ли наши виджеты в DOM
+  // Если виджеты были созданы, но их нет в DOM - нужно переинициализировать
+  const portfolioWidgets = document.querySelectorAll(
+    '[id^="portfolio-widget-"]',
+  );
+  const miniWidgets = document.querySelectorAll(
+    '[id^="portfolio-mini-widget-"]',
+  );
+
+  // Если нет ни одного виджета - возможно страница перерендерилась
+  if (portfolioWidgets.length === 0 && miniWidgets.length === 0) {
+    return true;
+  }
+
+  return false;
+}
 
 /**
  * Обработчик навигации - вызывается при изменении URL или DOM
  */
 function handleNavigation(): void {
-  const currentUrl = window.location.href;
-  if (currentUrl !== lastUrl) {
-    lastUrl = currentUrl;
-    LoggerUtil.info(
-      'Обнаружена навигация, переинициализируем слоты:',
-      currentUrl,
-    );
-    MastersService.addDynamicPortfolioSlots();
+  // Debounce - не вызываем слишком часто
+  if (debounceTimer) {
+    clearTimeout(debounceTimer);
   }
+
+  debounceTimer = setTimeout(() => {
+    if (shouldReinitialize()) {
+      const currentUrl = window.location.href;
+      lastUrl = currentUrl;
+      LoggerUtil.info(
+        'Обнаружена навигация или исчезновение виджетов, переинициализируем слоты:',
+        currentUrl,
+      );
+      MastersService.addDynamicPortfolioSlots();
+    }
+  }, 100);
 }
 
 /**
@@ -142,15 +179,40 @@ export function initializePlugin(): () => void {
 
   // MutationObserver для отслеживания изменений DOM (SPA навигация)
   navigationObserver = new MutationObserver((mutations) => {
-    // Проверяем, есть ли значительные изменения в DOM
-    const hasSignificantChanges = mutations.some(
-      (mutation) =>
-        mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0,
-    );
+    // Проверяем, были ли удалены наши виджеты или добавлены новые контейнеры
+    let shouldCheck = false;
 
-    if (hasSignificantChanges) {
-      // Debounce - не вызываем слишком часто
-      setTimeout(handleNavigation, 200);
+    for (const mutation of mutations) {
+      // Проверяем удалённые узлы - может наш виджет удалили
+      for (const node of mutation.removedNodes) {
+        if (node instanceof HTMLElement) {
+          if (
+            node.id?.startsWith('portfolio-widget-') ||
+            node.id?.startsWith('portfolio-mini-widget-') ||
+            node.querySelector?.('[id^="portfolio-widget-"]') ||
+            node.querySelector?.('[id^="portfolio-mini-widget-"]')
+          ) {
+            shouldCheck = true;
+            break;
+          }
+        }
+      }
+
+      // Проверяем добавленные узлы - может появился новый контейнер
+      if (!shouldCheck) {
+        for (const node of mutation.addedNodes) {
+          if (node instanceof HTMLElement && node.children?.length > 0) {
+            shouldCheck = true;
+            break;
+          }
+        }
+      }
+
+      if (shouldCheck) break;
+    }
+
+    if (shouldCheck) {
+      handleNavigation();
     }
   });
 
